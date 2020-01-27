@@ -6,6 +6,7 @@ from typing import *
 
 import pycurl
 
+from pycurl_requests import exceptions
 from pycurl_requests import models
 
 
@@ -53,7 +54,8 @@ def request(method, url, *, curl=None, allow_redirects=True, **kwargs):
         if allow_redirects:
             c.setopt(c.FOLLOWLOCATION, 1)
 
-        c.perform()
+        with curl_exception(request=prepared):
+            c.perform()
 
         status_code = c.getinfo(c.RESPONSE_CODE)
         effective_url = c.getinfo(c.EFFECTIVE_URL)
@@ -90,4 +92,15 @@ def parse_content_type(content_type: str) -> (str, Dict[str, str]):
     return mime_type, params
 
 
+@contextlib.contextmanager
+def curl_exception(*, request=None, response=None):
+    if not request and response and hasattr(response, 'request'):
+        request = response.request
 
+    try:
+        yield
+    except pycurl.error as e:
+        code, error_string = e.args[:2]
+        message = '{} (cURL code: {})'.format(error_string, code)
+        raise exceptions.RequestException(
+            message, curl_code=code, request=request, response=response)

@@ -1,12 +1,13 @@
 class RequestException(IOError):
-    def __init__(self, *args, **kwargs):
-        self.response = kwargs.pop('response', None)
-        self.request = kwargs.pop('request', None)
+    def __init__(self, *args, curl_code=None, request=None, response=None):
+        self.curl_code = curl_code
+        self.request = request
+        self.response = response
 
         if self.response is not None and not self.request and hasattr(self.response, 'request'):
             self.request = self.response.request
 
-        super().__init__(*args, **kwargs)
+        super().__init__(*args)
 
 
 class ConnectionError(RequestException):
