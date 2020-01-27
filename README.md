@@ -53,6 +53,21 @@ This library aims to be API compatible with [Requests](https://github.com/psf/re
 thus the [Requests documentation](https://requests.readthedocs.io/en/master/) should be
 mostly applicable.
 
+## cURL options
+
+It is possible customize the behaviour of cURL by passing a custom
+[`pycurl.Curl`](http://pycurl.io/docs/latest/curlobject.html) handle into the
+[`request`](https://requests.readthedocs.io/en/master/api/#requests.request)-like functions.
+
+For example, to make a request without getting the body:
+
+```python
+import pycurl_requests as requests
+c = pycurl.Curl()
+c.setopt(c.NOBODY, 1)
+response = requests.get('http://example.com', curl=c)
+```
+
 ## Known limitations
 
 - Currently limited to `GET` requests
