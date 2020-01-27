@@ -11,11 +11,17 @@
 
 ## Installation
 
+Latest release via [`pip`](https://pip.pypa.io/):
+
+```bash
+pip install pycurl-requests [--user]
+```
+
 via Git:
 
 ```bash
 git clone https://github.com/dcoles/pycurl-requests.git; cd pycurl-requests
-python3 setup.py install --user
+python3 setup.py install [--user]
 ```
 
 ## Quick-start
