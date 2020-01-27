@@ -1,7 +1,7 @@
-# PycURL Requests &#x2624;
+# PycURL Requests `<pycurl://☤>`
 
 **PycURL Requests** is a [Requests](https://github.com/psf/requests)-compatible interface for
-[pycURL](https://github.com/pycurl/pycurl).
+[PycURL](https://github.com/pycurl/pycurl).
 
 ## Requirements
 
