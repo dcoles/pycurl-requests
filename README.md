@@ -47,6 +47,14 @@ python3 setup.py install [--user]
 
 ```
 
+The library can also be used to run existing Python scripts that import the `requests` module.
+By running the script through the `pycurl_requests` helper, any use of the `requests` module will
+be automatically redirected to `pycurl_requests`.
+
+```bash
+python3 -m pycurl_requests -- script.py arg arg...
+```
+
 ## Documentation
 
 This library aims to be API compatible with [Requests](https://github.com/psf/requests),
