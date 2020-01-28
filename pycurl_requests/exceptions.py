@@ -1,5 +1,6 @@
 class RequestException(IOError):
-    def __init__(self, *args, curl_code=None, request=None, response=None):
+    def __init__(self, *args, curl_error=None, curl_code=None, request=None, response=None):
+        self.curl_error = curl_error
         self.curl_code = curl_code
         self.request = request
         self.response = response

@@ -103,4 +103,5 @@ def curl_exception(*, request=None, response=None):
         code, error_string = e.args[:2]
         message = '{} (cURL code: {})'.format(error_string, code)
         raise exceptions.RequestException(
-            message, curl_code=code, request=request, response=response)
+            message, curl_error=error_string, curl_code=code, request=request, response=response
+        ) from e
