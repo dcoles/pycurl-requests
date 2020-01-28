@@ -68,6 +68,26 @@ c.setopt(c.NOBODY, 1)
 response = requests.get('http://example.com', curl=c)
 ```
 
+## cURL exceptions
+
+All [`pycurl.error` exceptions](http://pycurl.io/docs/latest/callbacks.html#error-reporting)
+are mapped to a [`requests.RequestException`](https://requests.readthedocs.io/en/master/api/#exceptions)
+(or one of its subclasses).
+
+For convenience, the original `pycurl.error`'s error string and
+[cURL error code](https://curl.haxx.se/libcurl/c/libcurl-errors.html) will be set on the exception
+object as the `curl_error` and `curl_code` attributes.
+
+```python
+import pycurl_requests as requests
+try:
+    requests.get('http://connect_error')
+except requests.RequestException as e:
+    print('ERROR: {} (cURL code: {})'.format(e.curl_error, e.curl_code))
+```
+
+It is also possible to obtain the original `pycurl.error` using the `__cause__` attribute.
+
 ## Known limitations
 
 - Currently limited to `GET` requests
