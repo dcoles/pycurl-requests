@@ -24,6 +24,7 @@ def header(h):
 def main():
     parser = argparse.ArgumentParser(description='A basic `curl`-like command-line HTTP utility')
     parser.add_argument('-o', '--output', help='Write to file instead of stdout')
+    parser.add_argument('-L', '--location', help='Follow redirects', action='store_true')
     parser.add_argument('-X', '--request', help='Request command to use (e.g. HTTP method)')
     parser.add_argument('-H', '--header', action='append', type=header,
                         help='Add custom request header (format: `Header: Value`)')
@@ -76,7 +77,9 @@ def main():
     else:
         data = None
 
-    r = requests.request(method, args.url, headers=headers, data=data, json=args.json)
+    r = requests.request(method, args.url, headers=headers,
+                         data=data, json=args.json,
+                         allow_redirects=args.location)
     if output.isatty():
         content_type = r.headers.get('Content-Type', 'application/octet-stream').lower()
         if r.encoding or content_type in SAFE_CONTENT_TYPES or content_type.startswith('text/'):
