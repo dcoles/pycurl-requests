@@ -123,7 +123,7 @@ import pycurl_requests as requests
 try:
     requests.get('http://connect_error')
 except requests.RequestException as e:
-    print('ERROR: {} (cURL code: {})'.format(e.curl_error, e.curl_code))
+    print('ERROR: {} (cURL error: {})'.format(e.curl_error, e.curl_code))
 ```
 
 It is also possible to obtain the original `pycurl.error` using the `__cause__` attribute.

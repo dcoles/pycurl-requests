@@ -10,6 +10,24 @@ import pycurl
 from pycurl_requests import exceptions
 from pycurl_requests import models
 
+# Mapping of cURL error codes to Request exceptions
+EXCEPTION_MAP = {
+    1: exceptions.ConnectionError,   # UNSUPPORTED_PROTOCOL
+    3: exceptions.ConnectionError,   # URL_MALFORMAT
+    5: exceptions.ConnectionError,   # COULDNT_RESOLVE_PROXY
+    6: exceptions.ConnectionError,   # COULDNT_RESOLVE_HOST
+    7: exceptions.ConnectionError,   # COULDNT_CONNECT
+    28: exceptions.Timeout,          # OPERATION_TIMEDOUT
+    35: exceptions.ConnectionError,  # SSL_CONNECT_ERROR
+    45: exceptions.ConnectionError,  # INTERFACE_FAILED
+    47: exceptions.ConnectionError,  # TOO_MANY_REDIRECTS
+    52: exceptions.ConnectionError,  # GOT_NOTHING
+    60: exceptions.ConnectionError,  # PEER_FAILED_VERIFICATION
+    83: exceptions.ConnectionError,  # SSL_ISSUER_ERROR
+    90: exceptions.ConnectionError,  # SSL_PINNEDPUBKEYNOTMATCH
+    91: exceptions.ConnectionError,  # SSL_INVALIDCERTSTATUS
+}
+
 
 def request(*args, curl=None, allow_redirects=True, **kwargs):
     curl = curl or pycurl.Curl()
@@ -106,6 +124,7 @@ def parse_content_type(content_type: str) -> (str, Dict[str, str]):
 
 @contextlib.contextmanager
 def curl_exception(*, request=None, response=None):
+    """Re-raise PycURL exceptions the equivalent `RequestException`"""
     if not request and response and hasattr(response, 'request'):
         request = response.request
 
@@ -113,7 +132,9 @@ def curl_exception(*, request=None, response=None):
         yield
     except pycurl.error as e:
         code, error_string = e.args[:2]
-        message = '{} (cURL code: {})'.format(error_string, code)
-        raise exceptions.RequestException(
-            message, curl_error=error_string, curl_code=code, request=request, response=response
-        ) from e
+        message = '{} (cURL error: {})'.format(error_string, code)
+
+        exception = EXCEPTION_MAP.get(code, exceptions.RequestException)
+
+        raise exception(message, curl_error=error_string, curl_code=code,
+                        request=request, response=response) from e
