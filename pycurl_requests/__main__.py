@@ -13,7 +13,7 @@ def main():
     args = parser.parse_args()
 
     # Override requests
-    sys.modules['requests'] = pycurl_requests
+    pycurl_requests.patch_requests()
 
     # Run script
     sys.argv[1:] = args.arg
