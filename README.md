@@ -70,7 +70,9 @@ It is possible customize the behaviour of cURL by passing a custom
 For example, to make a request without getting the body:
 
 ```python
+import pycurl
 import pycurl_requests as requests
+
 c = pycurl.Curl()
 c.setopt(c.NOBODY, 1)
 response = requests.get('http://example.com', curl=c)
@@ -88,6 +90,7 @@ object as the `curl_error` and `curl_code` attributes.
 
 ```python
 import pycurl_requests as requests
+
 try:
     requests.get('http://connect_error')
 except requests.RequestException as e:
@@ -98,7 +101,6 @@ It is also possible to obtain the original `pycurl.error` using the `__cause__` 
 
 ## Known limitations
 
-- Currently limited to `GET` requests
 - No support for [Cookies](https://requests.readthedocs.io/en/master/user/quickstart/#cookies)
 - No support for [timeouts](https://requests.readthedocs.io/en/master/user/quickstart/#timeouts)
 - No support for [`Session` objects](https://requests.readthedocs.io/en/master/user/advanced/#session-objects) (e.g. [`requests.Session`](https://requests.readthedocs.io/en/master/api/#requests.Session))
@@ -106,6 +108,7 @@ It is also possible to obtain the original `pycurl.error` using the `__cause__` 
 - No support for [proxies](https://requests.readthedocs.io/en/master/user/advanced/#proxies)
 - No support for [link headers](https://requests.readthedocs.io/en/master/user/advanced/#link-headers) (e.g. [`Response.links`](https://requests.readthedocs.io/en/master/api/#requests.Response.links))
 - No support for [authentication](https://requests.readthedocs.io/en/master/user/authentication/)
+- No support for [sending multi-part encoded files](https://requests.readthedocs.io/en/master/user/advanced/#post-multiple-multipart-encoded-files))
 
 Most of these features should be supported in the near future.
 

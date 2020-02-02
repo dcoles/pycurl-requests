@@ -1,7 +1,8 @@
 import codecs
 import datetime
 import http.client
-import json
+import io
+import json as json_
 import urllib.parse
 from io import BytesIO
 
@@ -145,7 +146,7 @@ class Response:
             yield leftover
 
     def json(self, **kwargs):
-        return json.loads(self.content, **kwargs)
+        return json_.loads(self.content, **kwargs)
 
     @property
     def links(self):
@@ -251,8 +252,26 @@ class PreparedRequest:
         pass
 
     def prepare_body(self, data, files, json=None):
-        # FIXME: Not implemented
-        pass
+        if files is not None:
+            raise NotImplementedError
+        elif data is not None:
+            if isinstance(data, (io.RawIOBase, io.BufferedReader)):
+                # It's a file-like object, so can be sent directly
+                self.body = data
+            elif isinstance(data, (dict, list)):
+                self._set_header_default('Content-Type', 'application/x-www-form-urlencoded')
+                self.body = io.BytesIO(urllib.parse.urlencode(data).encode('ascii'))
+            else:
+                # Assume it's something bytes-compatible
+                self.body = io.BytesIO(data)
+        elif json is not None:
+            self._set_header_default('Content-Type', 'application/json')
+            self.body = io.BytesIO(json_.dumps(json, ensure_ascii=True).encode('ascii'))
+
+    def _set_header_default(self, key, default):
+        """Set header `key` to `default` if not already set"""
+        if key not in self.headers:
+            self.headers[key] = default
 
     def prepare_auth(self, auth, url=''):
         # FIXME: Not implemented

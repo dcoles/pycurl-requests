@@ -1,6 +1,7 @@
 import contextlib
 import datetime
 import http.client
+import io
 from io import BytesIO
 from typing import *
 
@@ -10,16 +11,13 @@ from pycurl_requests import exceptions
 from pycurl_requests import models
 
 
-def request(method, url, *, curl=None, allow_redirects=True, **kwargs):
-    if method != 'GET':
-        raise NotImplementedError
-
+def request(*args, curl=None, allow_redirects=True, **kwargs):
     curl = curl or pycurl.Curl()
 
-    request = models.Request(method, url, **kwargs)
+    request = models.Request(*args, **kwargs)
     prepared = request.prepare()
 
-    buffer = BytesIO()
+    response_buffer = BytesIO()
     reason = None
     headers = http.client.HTTPMessage()
 
@@ -47,10 +45,24 @@ def request(method, url, *, curl=None, allow_redirects=True, **kwargs):
     start_time = datetime.datetime.now(tz=datetime.timezone.utc)
 
     with contextlib.closing(curl) as c:
+        # Request
         c.setopt(c.URL, prepared.url)
+        c.setopt(c.CUSTOMREQUEST, prepared.method)
         c.setopt(c.HTTPHEADER, ['{}: {}'.format(n, v) for n, v in prepared.headers.items()])
+        if prepared.body is not None:
+            c.setopt(c.UPLOAD, 1)
+            c.setopt(c.READDATA, prepared.body)
+            if prepared.body.seekable:
+                # Set `Content-Length` if available
+                size = prepared.body.seek(0, io.SEEK_END)
+                prepared.body.seek(0)  # Seek back to start
+                c.setopt(c.INFILESIZE_LARGE, size)
+
+        # Response
         c.setopt(c.HEADERFUNCTION, header_function)
-        c.setopt(c.WRITEDATA, buffer)
+        c.setopt(c.WRITEDATA, response_buffer)
+
+        # Options
         if allow_redirects:
             c.setopt(c.FOLLOWLOCATION, 1)
 
@@ -63,7 +75,7 @@ def request(method, url, *, curl=None, allow_redirects=True, **kwargs):
     mime_type, params = parse_content_type(headers['Content-Type'])
     encoding = params.get('charset')
 
-    buffer.seek(0)
+    response_buffer.seek(0)
 
     end_time = datetime.datetime.now(tz=datetime.timezone.utc)
 
@@ -75,7 +87,7 @@ def request(method, url, *, curl=None, allow_redirects=True, **kwargs):
         headers=headers,
         encoding=encoding,
         url=effective_url,
-        buffer=buffer,
+        buffer=response_buffer,
     )
 
 
