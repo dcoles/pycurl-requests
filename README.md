@@ -59,9 +59,9 @@ python3 -m pycurl_requests -- script.py arg arg...
 
 A basic `curl`-like command-line utility is included:
 
-```bash
-usage: request.py [-h] [-o OUTPUT] [-X REQUEST] [-H HEADER] [-d DATA]
-                  [--json JSON]
+```
+usage: request.py [-h] [-d DATA] [-H HEADER] [--json JSON] [-L] [-o OUTPUT]
+                  [-X REQUEST] [-v]
                   url
 
 A basic `curl`-like command-line HTTP utility
@@ -71,14 +71,16 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
+  -d DATA, --data DATA  Add POST data
+  -H HEADER, --header HEADER
+                        Add custom request header (format: `Header: Value`)
+  --json JSON           Add JSON POST data
+  -L, --location        Follow redirects
   -o OUTPUT, --output OUTPUT
                         Write to file instead of stdout
   -X REQUEST, --request REQUEST
                         Request command to use (e.g. HTTP method)
-  -H HEADER, --header HEADER
-                        Add custom request header (format: `Header: Value`)
-  -d DATA, --data DATA  Add POST data
-  --json JSON           Add JSON POST data
+  -v, --verbose         Verbose logging
 ```
 
 This can also be used with the [Requests](https://github.com/psf/requests) library if
