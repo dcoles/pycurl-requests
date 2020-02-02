@@ -90,7 +90,7 @@ This library aims to be API compatible with [Requests](https://github.com/psf/re
 thus the [Requests documentation](https://requests.readthedocs.io/en/master/) should be
 mostly applicable.
 
-## cURL options
+### cURL options
 
 It is possible customize the behaviour of cURL by passing a custom
 [`pycurl.Curl`](http://pycurl.io/docs/latest/curlobject.html) handle into the
@@ -107,7 +107,7 @@ c.setopt(c.NOBODY, 1)
 response = requests.get('http://example.com', curl=c)
 ```
 
-## cURL exceptions
+### cURL exceptions
 
 All [`pycurl.error` exceptions](http://pycurl.io/docs/latest/callbacks.html#error-reporting)
 are mapped to a [`requests.RequestException`](https://requests.readthedocs.io/en/master/api/#exceptions)
@@ -127,6 +127,23 @@ except requests.RequestException as e:
 ```
 
 It is also possible to obtain the original `pycurl.error` using the `__cause__` attribute.
+
+### Logging
+
+Detailed log records from `libcurl`, including informational text and HTTP headers, can be shown
+by setting the `curl` logger (or sub-loggers) to [`DEBUG` level](https://docs.python.org/3/library/logging.html#logging-levels):
+
+```python
+import logging
+
+logging.getLogger('curl').setLevel(logging.DEBUG)
+```
+
+Log records are split into dedicated sub-loggers for each type of record:
+
+- `curl.text` &mdash; Informational text
+- `curl.header_in` &mdash; Header data received from the peer
+- `curl.header_out` &mdash; Header data sent to the peer
 
 ## Known limitations
 

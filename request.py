@@ -4,6 +4,7 @@
 import argparse
 import http.client
 import json
+import logging
 import os
 import sys
 
@@ -21,18 +22,39 @@ def header(h):
     return key, value
 
 
+class Formatter(logging.Formatter):
+    """A formatter that emulates cURLs `--verbose` output"""
+
+    LOGGER_PREFIX = {
+        'curl.text': '*',
+        'curl.header_out': '>',
+        'curl.header_in': '<',
+    }
+
+    def formatMessage(self, record: logging.LogRecord):
+        prefix = self.LOGGER_PREFIX.get(record.name, '?')
+        return '{} {}'.format(prefix, record.getMessage())
+
+
 def main():
     parser = argparse.ArgumentParser(description='A basic `curl`-like command-line HTTP utility')
-    parser.add_argument('-o', '--output', help='Write to file instead of stdout')
-    parser.add_argument('-L', '--location', help='Follow redirects', action='store_true')
-    parser.add_argument('-X', '--request', help='Request command to use (e.g. HTTP method)')
-    parser.add_argument('-H', '--header', action='append', type=header,
-                        help='Add custom request header (format: `Header: Value`)')
     parser.add_argument('-d', '--data', action='append',
                         help='Add POST data')
+    parser.add_argument('-H', '--header', action='append', type=header,
+                        help='Add custom request header (format: `Header: Value`)')
     parser.add_argument('--json', type=json.loads, help='Add JSON POST data')
+    parser.add_argument('-L', '--location', help='Follow redirects', action='store_true')
+    parser.add_argument('-o', '--output', help='Write to file instead of stdout')
+    parser.add_argument('-X', '--request', help='Request command to use (e.g. HTTP method)')
+    parser.add_argument('-v', '--verbose', action='store_true', help='Verbose logging')
     parser.add_argument('url', help='URL of resource to connect to')
     args = parser.parse_args()
+
+    handler = logging.StreamHandler()
+    handler.setFormatter(Formatter())
+    logging.basicConfig(
+        handlers=[handler],
+        level=logging.DEBUG if args.verbose else logging.ERROR)
 
     if args.output:
         output = open(args.output, 'wb')

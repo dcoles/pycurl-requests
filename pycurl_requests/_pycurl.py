@@ -3,11 +3,17 @@ import datetime
 import http.client
 import io
 from io import BytesIO
+import logging
 
 import pycurl
 
 from pycurl_requests import exceptions
 from pycurl_requests import models
+
+# For DEBUGFUNCTION callback
+CURLINFO_TEXT = 0
+CURLINFO_HEADER_IN = 1
+CURLINFO_HEADER_OUT = 2
 
 # Mapping of cURL error codes to Request exceptions
 EXCEPTION_MAP = {
@@ -27,6 +33,13 @@ EXCEPTION_MAP = {
     91: exceptions.ConnectionError,  # SSL_INVALIDCERTSTATUS
 }
 
+# Loggers
+LOGGER = logging.getLogger('curl')
+LOGGER_TEXT = LOGGER.getChild('text')
+LOGGER_HEADER_IN = LOGGER.getChild('header_in')
+LOGGER_HEADER_OUT = LOGGER.getChild('header_out')
+DEBUGFUNCTION_LOGGERS = {LOGGER_TEXT, LOGGER_HEADER_IN, LOGGER_HEADER_OUT}
+
 
 def request(*args, curl=None, allow_redirects=True, **kwargs):
     curl = curl or pycurl.Curl()
@@ -39,7 +52,7 @@ def request(*args, curl=None, allow_redirects=True, **kwargs):
     headers = http.client.HTTPMessage()
     reset_headers = False
 
-    def header_function(line):
+    def header_function(line: bytes):
         nonlocal reason, headers, reset_headers
 
         if reset_headers:
@@ -92,6 +105,11 @@ def request(*args, curl=None, allow_redirects=True, **kwargs):
             c.setopt(c.FOLLOWLOCATION, 1)
             c.setopt(c.MAXREDIRS, models.DEFAULT_REDIRECT_LIMIT)
 
+        # Logging
+        if any((l.isEnabledFor(logging.DEBUG) for l in DEBUGFUNCTION_LOGGERS)):
+            c.setopt(c.VERBOSE, 1)
+            c.setopt(c.DEBUGFUNCTION, debug_function)
+
         with curl_exception(request=prepared):
             c.perform()
 
@@ -112,6 +130,24 @@ def request(*args, curl=None, allow_redirects=True, **kwargs):
         url=effective_url,
         buffer=response_buffer,
     )
+
+
+def debug_function(infotype: int, message: bytes):
+    """cURL `DEBUGFUNCTION` that writes to logger"""
+    if infotype > CURLINFO_HEADER_OUT:
+        # Ignore data messages
+        return
+
+    message = message.decode('utf-8', 'replace')
+
+    if infotype == CURLINFO_TEXT:
+        LOGGER_TEXT.debug(message.rstrip())
+    elif infotype == CURLINFO_HEADER_IN:
+        for line in message.splitlines():
+            LOGGER_HEADER_IN.debug(line)
+    elif infotype == CURLINFO_HEADER_OUT:
+        for line in message.splitlines():
+            LOGGER_HEADER_OUT.debug(line)
 
 
 @contextlib.contextmanager
