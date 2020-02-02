@@ -37,9 +37,14 @@ def request(*args, curl=None, allow_redirects=True, **kwargs):
     response_buffer = BytesIO()
     reason = None
     headers = http.client.HTTPMessage()
+    reset_headers = False
 
     def header_function(line):
-        nonlocal reason
+        nonlocal reason, headers, reset_headers
+
+        if reset_headers:
+            headers = http.client.HTTPMessage()
+            reset_headers = False
 
         try:
             # Some servers return UTF-8 status
@@ -53,7 +58,10 @@ def request(*args, curl=None, allow_redirects=True, **kwargs):
             reason = reason.strip()
             return
 
-        if ':' not in line:
+        if line == '\r\n':
+            reset_headers = True
+            return
+        elif ':' not in line:
             return
 
         name, value = line.split(':', 1)
