@@ -187,7 +187,7 @@ class Response:
 
     @property
     def text(self):
-        return self.content.decode()
+        return self.content.decode(self.encoding or 'ISO-8859-1')
 
     @property
     def url(self):

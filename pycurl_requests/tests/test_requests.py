@@ -88,7 +88,7 @@ def test_get(http_server):
     assert response.reason == 'OK'
     assert response.headers['content-type'] == 'text/html; charset=UTF-8'
     assert response.headers['content-length'] == str(len(b'Hello\nWorld\n'))
-    assert response.encoding == 'UTF-8'
+    assert response.encoding == 'utf-8'
     assert response.apparent_encoding == 'ascii'
     assert response.content == b'Hello\nWorld\n'
     assert response.text == 'Hello\nWorld\n'

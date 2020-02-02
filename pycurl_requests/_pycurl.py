@@ -3,7 +3,6 @@ import datetime
 import http.client
 import io
 from io import BytesIO
-from typing import *
 
 import pycurl
 
@@ -90,9 +89,6 @@ def request(*args, curl=None, allow_redirects=True, **kwargs):
         status_code = c.getinfo(c.RESPONSE_CODE)
         effective_url = c.getinfo(c.EFFECTIVE_URL)
 
-    mime_type, params = parse_content_type(headers['Content-Type'])
-    encoding = params.get('charset')
-
     response_buffer.seek(0)
 
     end_time = datetime.datetime.now(tz=datetime.timezone.utc)
@@ -103,23 +99,10 @@ def request(*args, curl=None, allow_redirects=True, **kwargs):
         status_code=status_code,
         reason=reason,
         headers=headers,
-        encoding=encoding,
+        encoding=headers.get_content_charset(),
         url=effective_url,
         buffer=response_buffer,
     )
-
-
-def parse_content_type(content_type: str) -> (str, Dict[str, str]):
-    """Parse value of `Content-Type` header"""
-    parameters = content_type.split(';')
-    mime_type = parameters[0].strip()
-    params = http.client.HTTPMessage()
-    for parameter in parameters[1:]:
-        name, value = parameter.split('=', 1)
-        name, value = name.strip(), value.strip()
-        params[name] = value
-
-    return mime_type, params
 
 
 @contextlib.contextmanager
