@@ -10,6 +10,8 @@ import chardet
 
 from pycurl_requests.exceptions import HTTPError
 
+DEFAULT_REDIRECT_LIMIT = 30
+
 
 class Request:
     def __init__(self,

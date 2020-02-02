@@ -90,6 +90,7 @@ def request(*args, curl=None, allow_redirects=True, **kwargs):
         # Options
         if allow_redirects:
             c.setopt(c.FOLLOWLOCATION, 1)
+            c.setopt(c.MAXREDIRS, models.DEFAULT_REDIRECT_LIMIT)
 
         with curl_exception(request=prepared):
             c.perform()
