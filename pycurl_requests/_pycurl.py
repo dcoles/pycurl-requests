@@ -92,13 +92,19 @@ def request(*args, curl=None, timeout=None, allow_redirects=True, **kwargs):
         c.setopt(c.CUSTOMREQUEST, prepared.method)
         c.setopt(c.HTTPHEADER, ['{}: {}'.format(n, v) for n, v in prepared.headers.items()])
         if prepared.body is not None:
+            if isinstance(prepared.body, str):
+                body = io.BytesIO(prepared.body.encode('iso-8859-1'))
+            elif isinstance(prepared.body, bytes):
+                body = io.BytesIO(prepared.body)
+            else:
+                body = prepared.body
+
             c.setopt(c.UPLOAD, 1)
-            c.setopt(c.READDATA, prepared.body)
-            if prepared.body.seekable:
-                # Set `Content-Length` if available
-                size = prepared.body.seek(0, io.SEEK_END)
-                prepared.body.seek(0)  # Seek back to start
-                c.setopt(c.INFILESIZE_LARGE, size)
+            c.setopt(c.READDATA, body)
+
+        content_length = prepared.headers.get('Content-Length')
+        if content_length is not None:
+            c.setopt(c.INFILESIZE_LARGE, int(content_length))
 
         # Response
         c.setopt(c.HEADERFUNCTION, header_function)

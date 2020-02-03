@@ -3,7 +3,7 @@ import datetime
 import http.client
 import io
 import json as json_
-import urllib.parse
+from urllib.parse import urlsplit, urlunsplit, urlencode, parse_qsl
 from io import BytesIO
 
 import chardet
@@ -206,7 +206,7 @@ class PreparedRequest:
 
     @property
     def path_url(self):
-        return urllib.parse.urlsplit(self.url).path
+        return urlsplit(self.url).path
 
     def prepare(self,
                 method=None,
@@ -235,9 +235,9 @@ class PreparedRequest:
         if params:
             # Rebuild the URL with params included
             params = list(params.items()) if isinstance(params, dict) else params
-            parts = urllib.parse.urlsplit(url)
-            query = urllib.parse.urlencode(urllib.parse.parse_qsl(parts.query) + params, doseq=True)
-            self.url = urllib.parse.urlunsplit(parts[:3] + (query,) + parts[4:])
+            parts = urlsplit(url)
+            query = urlencode(parse_qsl(parts.query) + params, doseq=True)
+            self.url = urlunsplit(parts[:3] + (query,) + parts[4:])
         else:
             self.url = url
 
@@ -250,25 +250,45 @@ class PreparedRequest:
         pass
 
     def prepare_content_length(self, body):
-        # FIXME: Not implemented
-        pass
+        content_length = None
+
+        if body is None:
+            if self.method not in ('GET', 'HEAD'):
+                content_length = 0
+        elif isinstance(body, bytes):
+            content_length = len(body)
+        elif isinstance(body, str):
+            content_length = len(body.encode('iso-8859-1'))
+        elif getattr(body, 'seekable', False):
+            content_length = body.seek(0, io.SEEK_END)
+            body.seek(0)
+
+        if content_length is not None:
+            self.headers['Content-Length'] = str(content_length)
 
     def prepare_body(self, data, files, json=None):
+        body = None
+
         if files is not None:
             raise NotImplementedError
         elif data is not None:
             if isinstance(data, (io.RawIOBase, io.BufferedReader)):
                 # It's a file-like object, so can be sent directly
-                self.body = data
+                body = data
             elif isinstance(data, (dict, list)):
                 self._set_header_default('Content-Type', 'application/x-www-form-urlencoded')
-                self.body = io.BytesIO(urllib.parse.urlencode(data).encode('ascii'))
+                body = urlencode(data)
             else:
                 # Assume it's something bytes-compatible
-                self.body = io.BytesIO(data)
+                body = data
         elif json is not None:
             self._set_header_default('Content-Type', 'application/json')
-            self.body = io.BytesIO(json_.dumps(json, ensure_ascii=True).encode('ascii'))
+            body = json_.dumps(json, ensure_ascii=True).encode('ascii')
+
+        if 'Content-Length' not in self.headers:
+            self.prepare_content_length(body)
+
+        self.body = body
 
     def _set_header_default(self, key, default):
         """Set header `key` to `default` if not already set"""
