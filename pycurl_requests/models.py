@@ -3,11 +3,13 @@ import datetime
 import http.client
 import io
 import json as json_
-from urllib.parse import urlsplit, urlunsplit, urlencode, parse_qsl
+from urllib.parse import urlsplit, urlunsplit, urlencode, parse_qsl, quote
 from io import BytesIO
 
 import chardet
+import pycurl
 
+from pycurl_requests import exceptions
 from pycurl_requests.exceptions import HTTPError
 
 DEFAULT_REDIRECT_LIMIT = 30
@@ -229,17 +231,34 @@ class PreparedRequest:
         self.prepare_hooks(hooks)
 
     def prepare_method(self, method):
-        self.method = method.upper()
+        self.method = method.upper() if method else None
 
     def prepare_url(self, url, params):
-        if params:
-            # Rebuild the URL with params included
-            params = list(params.items()) if isinstance(params, dict) else params
-            parts = urlsplit(url)
-            query = urlencode(parse_qsl(parts.query) + params, doseq=True)
-            self.url = urlunsplit(parts[:3] + (query,) + parts[4:])
+        url = url.strip()
+
+        try:
+            scheme, _ = url.split(':', 1)
+        except ValueError:
+            raise exceptions.MissingSchema('Missing scheme for {!r}'.format(url))
+
+        info = pycurl.version_info()
+        protocols = info[8]
+        if scheme not in protocols:
+            raise exceptions.InvalidSchema('Unsupported scheme for {!r}'.format(url))
+
+        parts = urlsplit(url)
+        path = quote(parts.path) if parts.path else '/'
+
+        if not params:
+            query = parts.query
         else:
-            self.url = url
+            if isinstance(params, (str, bytes)):
+                params = parse_qsl(params)
+
+            params = list(params.items()) if isinstance(params, dict) else params
+            query = urlencode(parse_qsl(parts.query) + params, doseq=True)
+
+        self.url = urlunsplit(parts[:2] + (path, query) + parts[4:])
 
     def prepare_headers(self, headers):
         # NOTE: Only user-defined headers, not those set by libcurl

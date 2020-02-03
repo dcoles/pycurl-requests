@@ -89,7 +89,8 @@ def request(*args, curl=None, timeout=None, allow_redirects=True, **kwargs):
     with contextlib.closing(curl) as c:
         # Request
         c.setopt(c.URL, prepared.url)
-        c.setopt(c.CUSTOMREQUEST, prepared.method)
+        if prepared.method:
+            c.setopt(c.CUSTOMREQUEST, prepared.method)
         c.setopt(c.HTTPHEADER, ['{}: {}'.format(n, v) for n, v in prepared.headers.items()])
         if prepared.body is not None:
             if isinstance(prepared.body, str):
