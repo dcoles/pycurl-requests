@@ -297,7 +297,7 @@ class PreparedRequest:
             if isinstance(data, (io.RawIOBase, io.BufferedReader)):
                 # It's a file-like object, so can be sent directly
                 body = data
-            elif isinstance(data, (dict, list)):
+            elif isinstance(data, (dict, list, tuple)):
                 self._set_header_default('Content-Type', 'application/x-www-form-urlencoded')
                 body = urlencode(data)
             else:
