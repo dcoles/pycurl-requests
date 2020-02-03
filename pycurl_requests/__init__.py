@@ -6,4 +6,6 @@ from .models import Request, Response, PreparedRequest
 def patch_requests():
     """Patch Requests library with PycURL Requests"""
     import sys
-    sys.modules['requests'] = sys.modules[__name__]
+
+    for module in ('requests', 'requests.api', 'requests.exceptions', 'requests.models'):
+        sys.modules[module] = sys.modules[module.replace('requests', __name__, 1)]
