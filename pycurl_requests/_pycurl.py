@@ -17,20 +17,20 @@ CURLINFO_HEADER_OUT = 2
 
 # Mapping of cURL error codes to Request exceptions
 EXCEPTION_MAP = {
-    1: exceptions.ConnectionError,   # UNSUPPORTED_PROTOCOL
-    3: exceptions.ConnectionError,   # URL_MALFORMAT
-    5: exceptions.ConnectionError,   # COULDNT_RESOLVE_PROXY
-    6: exceptions.ConnectionError,   # COULDNT_RESOLVE_HOST
-    7: exceptions.ConnectionError,   # COULDNT_CONNECT
-    28: exceptions.Timeout,          # OPERATION_TIMEDOUT
-    35: exceptions.ConnectionError,  # SSL_CONNECT_ERROR
-    45: exceptions.ConnectionError,  # INTERFACE_FAILED
-    47: exceptions.ConnectionError,  # TOO_MANY_REDIRECTS
-    52: exceptions.ConnectionError,  # GOT_NOTHING
-    60: exceptions.ConnectionError,  # PEER_FAILED_VERIFICATION
-    83: exceptions.ConnectionError,  # SSL_ISSUER_ERROR
-    90: exceptions.ConnectionError,  # SSL_PINNEDPUBKEYNOTMATCH
-    91: exceptions.ConnectionError,  # SSL_INVALIDCERTSTATUS
+    1: exceptions.ConnectionError,    # UNSUPPORTED_PROTOCOL
+    3: exceptions.InvalidURL,         # URL_MALFORMAT
+    5: exceptions.ProxyError,         # COULDNT_RESOLVE_PROXY
+    6: exceptions.ConnectionError,    # COULDNT_RESOLVE_HOST
+    7: exceptions.ConnectionError,    # COULDNT_CONNECT
+    28: exceptions.Timeout,           # OPERATION_TIMEDOUT
+    35: exceptions.SSLError,          # SSL_CONNECT_ERROR
+    45: exceptions.ConnectionError,   # INTERFACE_FAILED
+    47: exceptions.TooManyRedirects,  # TOO_MANY_REDIRECTS
+    52: exceptions.ConnectionError,   # GOT_NOTHING
+    60: exceptions.SSLError,          # PEER_FAILED_VERIFICATION
+    83: exceptions.SSLError,          # SSL_ISSUER_ERROR
+    90: exceptions.SSLError,          # SSL_PINNEDPUBKEYNOTMATCH
+    91: exceptions.SSLError,          # SSL_INVALIDCERTSTATUS
 }
 
 # Loggers
