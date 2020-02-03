@@ -234,6 +234,9 @@ class PreparedRequest:
         self.method = method.upper() if method else None
 
     def prepare_url(self, url, params):
+        if isinstance(url, bytes):
+            url = url.decode('iso-8859-1')
+
         url = url.strip()
 
         try:
