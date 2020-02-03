@@ -5,7 +5,7 @@ with open("README.md", "r") as f:
 
 setup(
     name='pycurl-requests',
-    version='0.0.3',
+    version='0.0.4',
     description='A Requests-compatible interface for pycURL',
     long_description=long_description,
     long_description_content_type="text/markdown",
