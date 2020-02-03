@@ -2,6 +2,7 @@ import contextlib
 import datetime
 import http.client
 import io
+import warnings
 from io import BytesIO
 import logging
 
@@ -41,8 +42,11 @@ LOGGER_HEADER_OUT = LOGGER.getChild('header_out')
 DEBUGFUNCTION_LOGGERS = {LOGGER_TEXT, LOGGER_HEADER_IN, LOGGER_HEADER_OUT}
 
 
-def request(*args, curl=None, allow_redirects=True, **kwargs):
+def request(*args, curl=None, timeout=None, allow_redirects=True, **kwargs):
     curl = curl or pycurl.Curl()
+
+    if timeout:
+        warnings.warn('Timeouts not implemented. Ignoring...')
 
     request = models.Request(*args, **kwargs)
     prepared = request.prepare()
