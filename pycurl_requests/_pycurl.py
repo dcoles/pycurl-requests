@@ -42,14 +42,11 @@ LOGGER_HEADER_OUT = LOGGER.getChild('header_out')
 DEBUGFUNCTION_LOGGERS = {LOGGER_TEXT, LOGGER_HEADER_IN, LOGGER_HEADER_OUT}
 
 
-def request(*args, curl=None, timeout=None, allow_redirects=True, **kwargs):
-    curl = curl or pycurl.Curl()
+def send(prepared, *, curl=None, timeout=None, allow_redirects=True, max_redirects=-1):
+    c = curl or pycurl.Curl()
 
     if timeout:
         warnings.warn('Timeouts not implemented. Ignoring...')
-
-    request = models.Request(*args, **kwargs)
-    prepared = request.prepare()
 
     response_buffer = BytesIO()
     reason = None
@@ -86,46 +83,55 @@ def request(*args, curl=None, timeout=None, allow_redirects=True, **kwargs):
 
     start_time = datetime.datetime.now(tz=datetime.timezone.utc)
 
-    with contextlib.closing(curl) as c:
-        # Request
-        c.setopt(c.URL, prepared.url)
-        if prepared.method:
-            c.setopt(c.CUSTOMREQUEST, prepared.method)
-        c.setopt(c.HTTPHEADER, ['{}: {}'.format(n, v) for n, v in prepared.headers.items()])
-        if prepared.body is not None:
-            if isinstance(prepared.body, str):
-                body = io.BytesIO(prepared.body.encode('iso-8859-1'))
-            elif isinstance(prepared.body, bytes):
-                body = io.BytesIO(prepared.body)
-            else:
-                body = prepared.body
+    # Request
+    c.setopt(c.URL, prepared.url)
 
-            c.setopt(c.UPLOAD, 1)
-            c.setopt(c.READDATA, body)
+    if prepared.method:
+        c.setopt(c.CUSTOMREQUEST, prepared.method)
 
-        content_length = prepared.headers.get('Content-Length')
-        if content_length is not None:
-            c.setopt(c.INFILESIZE_LARGE, int(content_length))
+    if prepared.method == 'HEAD':
+        c.setopt(c.NOBODY, 1)
 
-        # Response
-        c.setopt(c.HEADERFUNCTION, header_function)
-        c.setopt(c.WRITEDATA, response_buffer)
+    c.setopt(c.HTTPHEADER, ['{}: {}'.format(n, v) for n, v in prepared.headers.items()])
 
-        # Options
-        if allow_redirects:
-            c.setopt(c.FOLLOWLOCATION, 1)
-            c.setopt(c.MAXREDIRS, models.DEFAULT_REDIRECT_LIMIT)
+    if prepared.body is not None:
+        if isinstance(prepared.body, str):
+            body = io.BytesIO(prepared.body.encode('iso-8859-1'))
+        elif isinstance(prepared.body, bytes):
+            body = io.BytesIO(prepared.body)
+        else:
+            body = prepared.body
 
-        # Logging
-        if any((l.isEnabledFor(logging.DEBUG) for l in DEBUGFUNCTION_LOGGERS)):
-            c.setopt(c.VERBOSE, 1)
-            c.setopt(c.DEBUGFUNCTION, debug_function)
+        c.setopt(c.UPLOAD, 1)
+        c.setopt(c.READDATA, body)
 
-        with curl_exception(request=prepared):
-            c.perform()
+    content_length = prepared.headers.get('Content-Length')
+    if content_length is not None:
+        c.setopt(c.INFILESIZE_LARGE, int(content_length))
 
-        status_code = c.getinfo(c.RESPONSE_CODE)
-        effective_url = c.getinfo(c.EFFECTIVE_URL)
+    # Response
+    c.setopt(c.HEADERFUNCTION, header_function)
+    c.setopt(c.WRITEDATA, response_buffer)
+
+    # Options
+    if allow_redirects:
+        c.setopt(c.FOLLOWLOCATION, 1)
+        c.setopt(c.POSTREDIR, c.REDIR_POST_ALL)
+        c.setopt(c.MAXREDIRS, max_redirects)
+
+    # Logging
+    if any((l.isEnabledFor(logging.DEBUG) for l in DEBUGFUNCTION_LOGGERS)):
+        c.setopt(c.VERBOSE, 1)
+        c.setopt(c.DEBUGFUNCTION, debug_function)
+
+    with curl_exception(request=prepared):
+        c.perform()
+
+    status_code = c.getinfo(c.RESPONSE_CODE)
+    effective_url = c.getinfo(c.EFFECTIVE_URL)
+
+    # Update the last URL we requested
+    prepared.url = effective_url
 
     response_buffer.seek(0)
 

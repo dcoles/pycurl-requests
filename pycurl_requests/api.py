@@ -1,29 +1,36 @@
-from pycurl_requests import _pycurl
+from pycurl_requests import sessions
 
 
 def request(method, url, **kwargs):
-    return _pycurl.request(method, url, **kwargs)
+    with sessions.Session() as session:
+        return session.request(method, url, **kwargs)
 
 
 def head(url, **kwargs):
-    return request('HEAD', url, **kwargs)
+    with sessions.Session() as session:
+        return session.head(url, **kwargs)
 
 
 def get(url, params=None, **kwargs):
-    return request('GET', url, params=params, **kwargs)
+    with sessions.Session() as session:
+        return session.get(url, params=params, **kwargs)
 
 
 def post(url, data=None, json=None, **kwargs):
-    return request('POST', url, data=data, json=json, **kwargs)
+    with sessions.Session() as session:
+        return session.post(url, data=data, json=json, **kwargs)
 
 
 def put(url, data=None, **kwargs):
-    return request('PUT', url, data=data, **kwargs)
+    with sessions.Session() as session:
+        return session.put(url, data=data, **kwargs)
 
 
 def patch(url, data=None, **kwargs):
-    return request('PATCH', url, data=data, **kwargs)
+    with sessions.Session() as session:
+        return session.patch(url, data=data, **kwargs)
 
 
 def delete(url, params=None, **kwargs):
-    return request('GET', url, params=params, **kwargs)
+    with sessions.Session() as session:
+        return session.delete(url, params=params, **kwargs)

@@ -126,6 +126,7 @@ def test_get_redirect_nofollow(http_server):
     response = requests.get(http_server.base_url + '/redirect', allow_redirects=False)
     response.raise_for_status()
 
+    assert response.request.url.endswith('/redirect')
     assert response.url.endswith('/redirect')
     assert response.status_code == 302
     assert response.text == 'Redirecting...\n'
@@ -135,6 +136,7 @@ def test_get_redirect(http_server):
     response = requests.get(http_server.base_url + '/redirect')
     response.raise_for_status()
 
+    assert response.request.url.endswith('/redirected')
     assert response.url.endswith('/redirected')
     assert response.text == 'Redirected\n'
 
