@@ -1,6 +1,5 @@
 import contextlib
 import datetime
-import http.client
 import io
 import warnings
 from io import BytesIO
@@ -10,6 +9,7 @@ import pycurl
 
 from pycurl_requests import exceptions
 from pycurl_requests import models
+from pycurl_requests import structures
 
 # For DEBUGFUNCTION callback
 CURLINFO_TEXT = 0
@@ -50,14 +50,14 @@ def send(prepared, *, curl=None, timeout=None, allow_redirects=True, max_redirec
 
     response_buffer = BytesIO()
     reason = None
-    headers = http.client.HTTPMessage()
+    headers = structures.CaseInsensitiveDict()
     reset_headers = False
 
     def header_function(line: bytes):
         nonlocal reason, headers, reset_headers
 
         if reset_headers:
-            headers = http.client.HTTPMessage()
+            headers = structures.CaseInsensitiveDict()
             reset_headers = False
 
         try:

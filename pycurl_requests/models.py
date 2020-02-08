@@ -1,6 +1,5 @@
 import codecs
 import datetime
-import http.client
 import io
 import json as json_
 from urllib.parse import urlsplit, urlunsplit, urlencode, parse_qsl, quote
@@ -10,7 +9,7 @@ import chardet
 import pycurl
 
 from pycurl_requests import exceptions
-from pycurl_requests.exceptions import HTTPError
+from pycurl_requests import structures
 
 DEFAULT_REDIRECT_LIMIT = 30
 
@@ -68,7 +67,7 @@ class Response:
                  elapsed: datetime.timedelta = None,
                  status_code: int = None,
                  reason: str = None,
-                 headers: http.client.HTTPMessage = None,
+                 headers: structures.CaseInsensitiveDict = None,
                  encoding: str = None,
                  url: str = None,
                  buffer: BytesIO = None):
@@ -166,12 +165,12 @@ class Response:
 
     def raise_for_status(self):
         if 400 <= self.status_code < 500:
-            raise HTTPError('{s.status_code} Client Error: {s.reason} for url: {s.url}'.format(s=self),
-                            response=self)
+            raise exceptions.HTTPError('{s.status_code} Client Error: {s.reason} for url: {s.url}'.format(s=self),
+                                       response=self)
 
         if 500 <= self.status_code < 600:
-            raise HTTPError('{s.status_code} Client Error: {s.reason} for url: {s.url}'.format(s=self),
-                            response=self)
+            raise exceptions.HTTPError('{s.status_code} Client Error: {s.reason} for url: {s.url}'.format(s=self),
+                                       response=self)
 
     @property
     def raw(self):
@@ -265,7 +264,7 @@ class PreparedRequest:
 
     def prepare_headers(self, headers):
         # NOTE: Only user-defined headers, not those set by libcurl
-        self.headers = headers or http.client.HTTPMessage()
+        self.headers = headers or structures.CaseInsensitiveDict()
 
     def prepare_cookies(self, cookies):
         # FIXME: Not implemented

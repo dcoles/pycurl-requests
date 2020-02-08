@@ -1,5 +1,4 @@
 import datetime
-import http.client
 import json
 import threading
 import urllib.parse
@@ -8,6 +7,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 import pytest
 
 import pycurl_requests as requests
+from pycurl_requests import structures
 
 
 @pytest.fixture(scope='module')
@@ -79,7 +79,7 @@ def test_get(http_server):
     assert response.request.method == 'GET'
     assert response.request.url == http_server.base_url + '/hello'
     assert response.request.path_url == '/hello'
-    assert isinstance(response.request.headers, http.client.HTTPMessage)
+    assert isinstance(response.request.headers, structures.CaseInsensitiveDict)
     assert response.request.body is None
 
     assert response.elapsed > datetime.timedelta(0)
@@ -113,7 +113,7 @@ def test_get_headers(http_server):
     response.raise_for_status()
     print(response.text)
 
-    headers = http.client.HTTPMessage()
+    headers = structures.CaseInsensitiveDict()
     for line in response.text.splitlines():
         name, value = line.split(':', 1)
         headers[name] = value.strip()

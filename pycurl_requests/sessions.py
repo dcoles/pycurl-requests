@@ -1,10 +1,10 @@
-import http.client
 import warnings
 from typing import *
 
 import pycurl
 
 from pycurl_requests.models import Request, PreparedRequest, Response, DEFAULT_REDIRECT_LIMIT
+from pycurl_requests import structures
 from pycurl_requests import _pycurl
 
 
@@ -13,7 +13,7 @@ class Session:
         self.auth = None
         self.cert = None
         self.cookies = NotImplemented
-        self.headers = http.client.HTTPMessage()
+        self.headers = structures.CaseInsensitiveDict()
         self.hooks = NotImplemented
         self.max_redirects = DEFAULT_REDIRECT_LIMIT
         self.params = {}
@@ -90,7 +90,7 @@ class Session:
     def prepare_request(self, request: Request) -> PreparedRequest:
         prepared = PreparedRequest()
 
-        headers = http.client.HTTPMessage()
+        headers = structures.CaseInsensitiveDict()
         for name, value in self.headers.items():
             headers[name] = value
         for name, value in (request.headers or {}).items():
