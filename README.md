@@ -115,9 +115,9 @@ All [`pycurl.error` exceptions](http://pycurl.io/docs/latest/callbacks.html#erro
 are mapped to a [`requests.RequestException`](https://requests.readthedocs.io/en/master/api/#exceptions)
 (or one of its subclasses).
 
-For convenience, the original `pycurl.error`'s error string and
+For convenience, the original `pycurl.error` error message and
 [cURL error code](https://curl.haxx.se/libcurl/c/libcurl-errors.html) will be set on the exception
-object as the `curl_error` and `curl_code` attributes.
+object as the `curl_message` and `curl_code` attributes.
 
 ```python
 import pycurl_requests as requests
@@ -125,7 +125,7 @@ import pycurl_requests as requests
 try:
     requests.get('http://connect_error')
 except requests.RequestException as e:
-    print('ERROR: {} (cURL error: {})'.format(e.curl_error, e.curl_code))
+    print('ERROR: {} (cURL error: {})'.format(e.curl_message, e.curl_code))
 ```
 
 It is also possible to obtain the original `pycurl.error` using the `__cause__` attribute.

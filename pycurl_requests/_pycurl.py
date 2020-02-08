@@ -175,5 +175,5 @@ def curl_exception(*, request=None, response=None):
 
         exception = EXCEPTION_MAP.get(code, exceptions.RequestException)
 
-        raise exception(message, curl_error=error_string, curl_code=code,
+        raise exception(message, curl_message=error_string, curl_code=code,
                         request=request, response=response) from e

@@ -31,8 +31,8 @@ This module contains the set of Requests' exceptions.
 class RequestException(IOError):
     """There was an ambiguous exception that occurred while handling your request."""
 
-    def __init__(self, *args, curl_error=None, curl_code=None, request=None, response=None):
-        self.curl_error = curl_error
+    def __init__(self, *args, curl_message=None, curl_code=None, request=None, response=None):
+        self.curl_message = curl_message
         self.curl_code = curl_code
         self.request = request
         self.response = response
