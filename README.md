@@ -84,7 +84,7 @@ optional arguments:
 ```
 
 This can also be used with the [Requests](https://github.com/psf/requests) library if
-`REQUEST_REQUESTS` environment variable is set to a non-zero value.
+`PYCURLREQUESTS_REQUESTS` environment variable is set to a non-null value.
 
 ## Documentation
 

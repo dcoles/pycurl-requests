@@ -29,7 +29,12 @@ class Session:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.curl.close()
+        self.close()
+
+    def close(self):
+        if self.curl:
+            self.curl.close()
+
         self.curl = None
 
     def get(self, url, params=None, **kwargs) -> Response:

@@ -6,7 +6,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 
 import pytest
 
-import pycurl_requests as requests
+from pycurl_requests import requests
 from pycurl_requests import structures
 
 

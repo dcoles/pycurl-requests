@@ -5,14 +5,9 @@ import argparse
 import http.client
 import json
 import logging
-import os
 import sys
 
-if os.getenv('REQUEST_REQUESTS', None):
-    # Use Python Requests (https://github.com/psf/requests)
-    import requests
-else:
-    import pycurl_requests as requests
+from pycurl_requests import requests
 
 SAFE_CONTENT_TYPES = {'application/json'}
 

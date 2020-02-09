@@ -1,7 +1,7 @@
 import pycurl
 import pytest
 
-import pycurl_requests as requests
+from pycurl_requests import requests
 
 
 def test_connecterror_refused():
