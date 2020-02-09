@@ -8,6 +8,11 @@ from pycurl_requests import structures
 from pycurl_requests import _pycurl
 
 
+# Stubbed out for Requests tests
+class SessionRedirectMixin:
+    pass
+
+
 class Session:
     def __init__(self, *, curl: pycurl.Curl = None):
         self.auth = None
