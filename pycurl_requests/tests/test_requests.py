@@ -1,79 +1,18 @@
 import datetime
-import json
-import threading
-import urllib.parse
-from http.server import HTTPServer, BaseHTTPRequestHandler
 
 import pytest
 
 from pycurl_requests import requests
 from pycurl_requests import structures
-
-
-@pytest.fixture(scope='module')
-def http_server():
-    httpd = HTTPServer(('127.0.0.1', 0), HTTPRequestHandler)
-    httpd.base_url = 'http://{}:{}'.format(*httpd.server_address)
-    thread = threading.Thread(target=httpd.serve_forever)
-    thread.start()
-    try:
-        yield httpd
-    finally:
-        httpd.shutdown()
-        thread.join()
-
-
-class HTTPRequestHandler(BaseHTTPRequestHandler):
-    def log_message(self, format, *args):
-        # Mute HTTP logging
-        pass
-
-    def do_GET(self):
-        if self.url.path == '/hello':
-            self.response('Hello\nWorld\n')
-        elif self.url.path == '/params':
-            self.response('\n'.join(('{}: {}'.format(n, v)
-                                     for n, v in urllib.parse.parse_qsl(self.url.query))))
-        elif self.url.path == '/headers':
-            self.response('\n'.join(('{}: {}'.format(n, v)
-                                     for n, v in self.headers.items())))
-        elif self.url.path == '/redirect':
-            self.response('Redirecting...\n', (302, 'Found'),
-                          headers={'Location': '/redirected'})
-        elif self.url.path == '/redirected':
-            self.response('Redirected\n')
-        elif self.url.path == '/json':
-            self.response(json.dumps({'Hello': 'World'}), content_type='application/json')
-        else:
-            self.send_error(404, 'Not Found')
-
-    @property
-    def url(self):
-        if not hasattr(self, '_url'):
-            # For some annoying reason this can't be set in `__init__`
-            self._url = urllib.parse.urlsplit(self.path)
-
-        return self._url
-
-    def response(self, body, status=None, content_type=None, headers=None):
-        body = body.encode('utf-8') if isinstance(body, str) else body
-        status = status or (200, 'OK')
-        content_type = content_type or 'text/html; charset=UTF-8'
-        headers = headers or {}
-        self.send_response(*status)
-        self.send_header('Content-Type', content_type)
-        self.send_header('Content-Length', len(body))
-        for key, value in headers.items():
-            self.send_header(key, value)
-        self.end_headers()
-
-        self.wfile.write(body)
+from pycurl_requests.tests.utils import *  # Used for fixtures
 
 
 def test_get(http_server):
     response = requests.get(http_server.base_url + '/hello')
     assert isinstance(response, requests.Response)
     response.raise_for_status()
+
+    assert http_server.last_url.path == '/hello'
 
     assert isinstance(response.request, requests.PreparedRequest)
     assert response.request.method == 'GET'
@@ -140,12 +79,11 @@ def test_get_redirect_nofollow(http_server):
 
 
 def test_get_redirect(http_server):
-    response = requests.get(http_server.base_url + '/redirect')
-    response.raise_for_status()
+    with pytest.raises(requests.TooManyRedirects) as e:
+        requests.get(http_server.base_url + '/redirect')
 
-    assert response.request.url.endswith('/redirected')
-    assert response.url.endswith('/redirected')
-    assert response.text == 'Redirected\n'
+    # max_redirects defaults to 30
+    assert http_server.last_url.path == '/redirect30'
 
 
 def test_get_json(http_server):
