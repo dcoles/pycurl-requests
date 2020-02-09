@@ -211,7 +211,7 @@ class PreparedRequest:
 
         info = pycurl.version_info()
         protocols = info[8]
-        if scheme not in protocols:
+        if scheme.lower() not in protocols:
             raise exceptions.InvalidSchema('Unsupported scheme for {!r}'.format(url))
 
         parts = urlsplit(url)
