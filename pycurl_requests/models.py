@@ -2,6 +2,7 @@ import codecs
 import datetime
 import io
 import json as json_
+from collections import abc
 from urllib.parse import urlsplit, urlunsplit, urlencode, parse_qsl, quote
 from io import BytesIO
 
@@ -256,8 +257,11 @@ class PreparedRequest:
         else:
             if isinstance(params, (str, bytes)):
                 params = parse_qsl(params)
+            if isinstance(params, abc.Mapping):
+                params = list(params.items())
+            else:
+                params = list(params)
 
-            params = list(params.items()) if isinstance(params, dict) else params
             query = urlencode(parse_qsl(parts.query) + params, doseq=True)
 
         self.url = urlunsplit(parts[:2] + (path, query) + parts[4:])
@@ -296,7 +300,7 @@ class PreparedRequest:
             if isinstance(data, (io.RawIOBase, io.BufferedReader)):
                 # It's a file-like object, so can be sent directly
                 body = data
-            elif isinstance(data, (dict, list, tuple)):
+            elif isinstance(data, (abc.Mapping, list, tuple)):
                 self._set_header_default('Content-Type', 'application/x-www-form-urlencoded')
                 body = urlencode(data)
             else:

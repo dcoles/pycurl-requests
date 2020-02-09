@@ -108,10 +108,17 @@ def test_get_params(http_server):
     assert response.text == 'q: foo\nr: bar'
 
 
+@pytest.mark.parametrize('sequence_type', [list, tuple])
+def test_get_params_list(http_server, sequence_type):
+    response = requests.get(http_server.base_url + '/params', params=sequence_type([('q', 'foo'), ('r', 'bar'), ('q', 'baz')]))
+    response.raise_for_status()
+
+    assert response.text == 'q: foo\nr: bar\nq: baz'
+
+
 def test_get_headers(http_server):
     response = requests.get(http_server.base_url + '/headers', headers={'Foo': 'foo', 'Bar': 'bar'})
     response.raise_for_status()
-    print(response.text)
 
     headers = structures.CaseInsensitiveDict()
     for line in response.text.splitlines():

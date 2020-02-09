@@ -1,4 +1,5 @@
 import warnings
+from collections import abc
 from typing import *
 
 import pycurl
@@ -103,7 +104,7 @@ class Session:
             files=request.files,
             data=request.data,
             json=request.json,
-            params=dict(self.params, **request.params or {}),
+            params=_merge_params(self.params, request.params),
             auth=NotImplemented,  # TODO: Merge request with Session
             cookies=NotImplemented,  # TODO: Merge request with Session
             hooks=NotImplemented)  # TODO: Merge request with Session
@@ -128,6 +129,24 @@ class Session:
 
     def should_strip_auth(self, old_url, new_url):
         raise NotImplementedError
+
+
+def _merge_params(current, new):
+    """Merge parameters dictionary"""
+    if not new:
+        return current
+
+    if not current:
+        return new
+
+    if isinstance(new, abc.Mapping):
+        for name, value in new.items():
+            current.setdefault(name, []).append(value)
+    else:
+        for name, value in new:
+            current.setdefault(name, []).append(value)
+
+    return current
 
 
 def session():
