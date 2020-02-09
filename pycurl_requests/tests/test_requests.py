@@ -1,10 +1,17 @@
 import datetime
+import sys
 
 import pytest
 
 from pycurl_requests import requests
 from pycurl_requests import structures
 from pycurl_requests.tests.utils import *  # Used for fixtures
+
+try:
+    from urllib3.util.timeout import Timeout
+except ImportError:
+    def Timeout(total=None, connect=None, read=None):
+        return NotImplemented
 
 
 def test_get(http_server):
@@ -120,23 +127,31 @@ def test_get_iter_lines(delimiter, http_server):
         assert next(it)
 
 
-def test_get_timeout(http_server):
+@pytest.mark.parametrize('timeout', [0.1, (None, 0.1)])
+def test_get_timeout(http_server, timeout):
     with pytest.raises(requests.Timeout):
-        requests.get(http_server.base_url + '/slow', timeout=0.1)
+        requests.get(http_server.base_url + '/slow', timeout=timeout)
 
 
-def test_get_timeout_tuple(http_server):
+@pytest.mark.skipif('urllib3' not in sys.modules, reason='urllib3 not available')
+@pytest.mark.parametrize('timeout', [Timeout(read=0.1), Timeout(total=0.1)])
+def test_get_timeout_urllib3(http_server, timeout):
     with pytest.raises(requests.Timeout):
-        requests.get(http_server.base_url + '/slow', timeout=(None, 0.1))
+        requests.get(http_server.base_url + '/slow', timeout=timeout)
 
 
-def test_get_connect_timeout():
+@pytest.mark.parametrize('timeout', [0.1, (0.1, None), Timeout(connect=0.1), Timeout(total=0.1)])
+def test_get_connect_timeout(http_server, timeout):
     with pytest.raises(requests.Timeout):
-        # RFC-5737 TEST-NET-1
-        requests.get('http://192.0.2.1', timeout=0.1)
+        # Use RFC-5737 TEST-NET-1 address since it should always be unreachable
+        requests.get('http://192.0.2.1', timeout=timeout)
+        requests.get(http_server.base_url + '/slow', timeout=timeout)
 
 
-def test_get_connect_timeout_tuple():
+@pytest.mark.skipif('urllib3' not in sys.modules, reason='urllib3 not available')
+@pytest.mark.parametrize('timeout', [Timeout(connect=0.1), Timeout(total=0.1)])
+def test_get_connect_timeout_urllib3(http_server, timeout):
     with pytest.raises(requests.Timeout):
-        # RFC-5737 TEST-NET-1
-        requests.get('http://192.0.2.1', timeout=(0.1, None))
+        # Use RFC-5737 TEST-NET-1 address since it should always be unreachable
+        requests.get('http://192.0.2.1', timeout=timeout)
+        requests.get(http_server.base_url + '/slow', timeout=timeout)

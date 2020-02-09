@@ -1,6 +1,5 @@
 import datetime
 import io
-import warnings
 from io import BytesIO
 import logging
 
@@ -9,6 +8,13 @@ import pycurl
 from pycurl_requests import exceptions
 from pycurl_requests import models
 from pycurl_requests import structures
+
+try:
+    from urllib3.util.timeout import Timeout
+except ImportError:
+    # Timeout not supported
+    Timeout = None
+
 
 # For DEBUGFUNCTION callback
 CURLINFO_TEXT = 0
@@ -36,6 +42,12 @@ class Request:
         if timeout is not None:
             if isinstance(timeout, (int, float)):
                 self.connect_timeout, self.read_timeout = timeout, timeout
+            elif isinstance(timeout, Timeout):
+                timeout.start_connect()
+                self.connect_timeout = (0 if timeout.connect_timeout is Timeout.DEFAULT_TIMEOUT
+                                        else timeout.connect_timeout)
+                self.read_timeout = (0 if timeout.read_timeout is Timeout.DEFAULT_TIMEOUT
+                                       else timeout.read_timeout)
             else:
                 self.connect_timeout, self.read_timeout = timeout
         else:
@@ -114,10 +126,12 @@ class Request:
 
         # Options
         if self.connect_timeout is not None:
-            self.curl.setopt(pycurl.CONNECTTIMEOUT_MS, int(self.connect_timeout * 1000))
+            timeout = int(self.connect_timeout * 1000)
+            self.curl.setopt(pycurl.CONNECTTIMEOUT_MS, timeout)
 
         if self.read_timeout is not None:
-            self.curl.setopt(pycurl.TIMEOUT_MS, int(self.read_timeout * 1000))
+            timeout = int(self.read_timeout * 1000)
+            self.curl.setopt(pycurl.TIMEOUT_MS, timeout)
 
         if self.allow_redirects:
             self.curl.setopt(pycurl.FOLLOWLOCATION, 1)
