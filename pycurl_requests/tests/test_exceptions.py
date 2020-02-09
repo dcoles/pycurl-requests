@@ -49,5 +49,5 @@ def test_toomanyredirects(http_server):
 
     if IS_PYCURL_REQUESTS:
         assert isinstance(exception.__cause__, pycurl.error)
-        assert exception.curl_code == pycurl.E_COULDNT_RESOLVE_HOST
-        assert 'Could not resolve host' in exception.curl_message
+        assert exception.curl_code == pycurl.E_TOO_MANY_REDIRECTS
+        assert 'Maximum (0) redirects followed' in exception.curl_message

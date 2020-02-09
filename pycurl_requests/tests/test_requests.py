@@ -5,8 +5,12 @@ import pytest
 
 from pycurl_requests import cookies
 from pycurl_requests import requests
-from pycurl_requests import structures
 from pycurl_requests.tests.utils import *  # Used for fixtures
+
+if IS_PYCURL_REQUESTS:
+    from pycurl_requests.structures import CaseInsensitiveDict
+else:
+    from requests.structures import CaseInsensitiveDict
 
 try:
     from urllib3.util.timeout import Timeout
@@ -26,7 +30,7 @@ def test_get(http_server):
     assert response.request.method == 'GET'
     assert response.request.url == http_server.base_url + '/hello'
     assert response.request.path_url == '/hello'
-    assert isinstance(response.request.headers, structures.CaseInsensitiveDict)
+    assert isinstance(response.request.headers, CaseInsensitiveDict)
     assert response.request.body is None
 
     assert response.elapsed > datetime.timedelta(0)
@@ -67,7 +71,7 @@ def test_get_headers(http_server):
     response = requests.get(http_server.base_url + '/headers', headers={'Foo': 'foo', 'Bar': 'bar'})
     response.raise_for_status()
 
-    headers = structures.CaseInsensitiveDict()
+    headers = CaseInsensitiveDict()
     for line in response.text.splitlines():
         name, value = line.split(':', 1)
         headers[name] = value.strip()
