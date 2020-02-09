@@ -227,7 +227,15 @@ class PreparedRequest:
 
     def prepare_headers(self, headers):
         # NOTE: Only user-defined headers, not those set by libcurl
-        self.headers = headers or structures.CaseInsensitiveDict()
+        headers = headers or structures.CaseInsensitiveDict()
+
+        # Filter out headers with None value
+        header_names = headers.keys()
+        for name in header_names:
+            if headers[name] is None:
+                del headers[name]
+
+        self.headers = headers
 
     def prepare_cookies(self, cookies):
         # FIXME: Not implemented

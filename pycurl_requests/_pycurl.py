@@ -60,7 +60,7 @@ class Request:
 
     def header_function(self, line: bytes):
         if self.reset_headers:
-            headers = structures.CaseInsensitiveDict()
+            self.headers = structures.CaseInsensitiveDict()
             self.reset_headers = False
 
         try:
