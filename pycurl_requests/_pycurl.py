@@ -42,23 +42,26 @@ LOGGER_HEADER_OUT = LOGGER.getChild('header_out')
 DEBUGFUNCTION_LOGGERS = {LOGGER_TEXT, LOGGER_HEADER_IN, LOGGER_HEADER_OUT}
 
 
-def send(prepared, *, curl=None, timeout=None, allow_redirects=True, max_redirects=-1):
-    c = curl or pycurl.Curl()
+class Request:
+    def __init__(self, prepared, *, curl=None, timeout=None, allow_redirects=True, max_redirects=-1):
+        self.prepared = prepared
+        self.curl = curl or pycurl.Curl()
+        self.timeout = timeout
+        self.allow_redirects = allow_redirects
+        self.max_redirects = max_redirects
 
-    if timeout:
-        warnings.warn('Timeouts not implemented. Ignoring...')
+        if timeout:
+            warnings.warn('Timeouts not implemented. Ignoring...')
 
-    response_buffer = BytesIO()
-    reason = None
-    headers = structures.CaseInsensitiveDict()
-    reset_headers = False
+        self.response_buffer = BytesIO()
+        self.reason = None
+        self.headers = structures.CaseInsensitiveDict()
+        self.reset_headers = False
 
-    def header_function(line: bytes):
-        nonlocal reason, headers, reset_headers
-
-        if reset_headers:
+    def header_function(self, line: bytes):
+        if self.reset_headers:
             headers = structures.CaseInsensitiveDict()
-            reset_headers = False
+            self.reset_headers = False
 
         try:
             # Some servers return UTF-8 status
@@ -67,86 +70,100 @@ def send(prepared, *, curl=None, timeout=None, allow_redirects=True, max_redirec
             # Fall back to latin-1
             line = line.decode('iso-8859-1')
 
-        if reason is None:
+        if self.reason is None:
             _, _, reason = line.split(' ', 2)
-            reason = reason.strip()
+            self.reason = reason.strip()
             return
 
         if line == '\r\n':
-            reset_headers = True
+            self.reset_headers = True
             return
         elif ':' not in line:
             return
 
         name, value = line.split(':', 1)
-        headers[name] = value.strip()
+        self.headers[name] = value.strip()
 
-    start_time = datetime.datetime.now(tz=datetime.timezone.utc)
+    def send(self):
 
-    # Request
-    c.setopt(c.URL, prepared.url)
+        self.curl.setopt(pycurl.URL, self.prepared.url)
 
-    if prepared.method:
-        c.setopt(c.CUSTOMREQUEST, prepared.method)
+        if self.prepared.method:
+            self.curl.setopt(pycurl.CUSTOMREQUEST, self.prepared.method)
 
-    if prepared.method == 'HEAD':
-        c.setopt(c.NOBODY, 1)
+        if self.prepared.method == 'HEAD':
+            self.curl.setopt(pycurl.NOBODY, 1)
 
-    c.setopt(c.HTTPHEADER, ['{}: {}'.format(n, v) for n, v in prepared.headers.items()])
+        self.curl.setopt(pycurl.HTTPHEADER, ['{}: {}'.format(n, v) for n, v in self.prepared.headers.items()])
 
-    if prepared.body is not None:
-        if isinstance(prepared.body, str):
-            body = io.BytesIO(prepared.body.encode('iso-8859-1'))
-        elif isinstance(prepared.body, bytes):
-            body = io.BytesIO(prepared.body)
-        else:
-            body = prepared.body
+        if self.prepared.body is not None:
+            if isinstance(self.prepared.body, str):
+                body = io.BytesIO(self.prepared.body.encode('iso-8859-1'))
+            elif isinstance(self.prepared.body, bytes):
+                body = io.BytesIO(self.prepared.body)
+            else:
+                body = self.prepared.body
 
-        c.setopt(c.UPLOAD, 1)
-        c.setopt(c.READDATA, body)
+            self.curl.setopt(pycurl.UPLOAD, 1)
+            self.curl.setopt(pycurl.READDATA, body)
 
-    content_length = prepared.headers.get('Content-Length')
-    if content_length is not None:
-        c.setopt(c.INFILESIZE_LARGE, int(content_length))
+        content_length = self.prepared.headers.get('Content-Length')
+        if content_length is not None:
+            self.curl.setopt(pycurl.INFILESIZE_LARGE, int(content_length))
 
-    # Response
-    c.setopt(c.HEADERFUNCTION, header_function)
-    c.setopt(c.WRITEDATA, response_buffer)
+        # Response
+        self.curl.setopt(pycurl.HEADERFUNCTION, self.header_function)
+        self.curl.setopt(pycurl.WRITEDATA, self.response_buffer)
 
-    # Options
-    if allow_redirects:
-        c.setopt(c.FOLLOWLOCATION, 1)
-        c.setopt(c.POSTREDIR, c.REDIR_POST_ALL)
-        c.setopt(c.MAXREDIRS, max_redirects)
+        # Options
+        if self.allow_redirects:
+            self.curl.setopt(pycurl.FOLLOWLOCATION, 1)
+            self.curl.setopt(pycurl.POSTREDIR, pycurl.REDIR_POST_ALL)
+            self.curl.setopt(pycurl.MAXREDIRS, self.max_redirects)
 
-    # Logging
-    if any((l.isEnabledFor(logging.DEBUG) for l in DEBUGFUNCTION_LOGGERS)):
-        c.setopt(c.VERBOSE, 1)
-        c.setopt(c.DEBUGFUNCTION, debug_function)
+        # Logging
+        if any((l.isEnabledFor(logging.DEBUG) for l in DEBUGFUNCTION_LOGGERS)):
+            self.curl.setopt(pycurl.VERBOSE, 1)
+            self.curl.setopt(pycurl.DEBUGFUNCTION, debug_function)
 
-    with curl_exception(request=prepared):
-        c.perform()
+        return self.perform()
 
-    status_code = c.getinfo(c.RESPONSE_CODE)
-    effective_url = c.getinfo(c.EFFECTIVE_URL)
+    def perform(self):
+        try:
+            start_time = datetime.datetime.now(tz=datetime.timezone.utc)
+            try:
+                self.curl.perform()
+            finally:
+                end_time = datetime.datetime.now(tz=datetime.timezone.utc)
+                self.prepared.url = self.curl.getinfo(pycurl.EFFECTIVE_URL)
+                self.response_buffer.seek(0)
+                response = self.build_response(elapsed=end_time - start_time)
+        except pycurl.error as e:
+            code, message = e.args[:2]
+            msg = '{} (cURL error: {})'.format(message, code)
 
-    # Update the last URL we requested
-    prepared.url = effective_url
+            exception = EXCEPTION_MAP.get(code, exceptions.RequestException)
+            raise exception(msg, curl_message=message, curl_code=code,
+                            request=self.prepared, response=response) from e
 
-    response_buffer.seek(0)
+        return response
 
-    end_time = datetime.datetime.now(tz=datetime.timezone.utc)
+    def build_response(self, elapsed=None):
+        status_code = self.curl.getinfo(pycurl.RESPONSE_CODE)
+        if not status_code:
+            return None
 
-    return models.Response(
-        prepared_request=prepared,
-        elapsed=end_time - start_time,
-        status_code=status_code,
-        reason=reason,
-        headers=headers,
-        encoding=headers.get_content_charset(),
-        url=effective_url,
-        buffer=response_buffer,
-    )
+        response = models.Response()
+        response.request = self.prepared
+        response.elapsed = elapsed
+        response.status_code = status_code
+        response.reason = self.reason
+        response.headers = self.headers
+        response.encoding = self.headers.get_content_charset()
+        response.url = self.prepared.url
+        response.raw = self.response_buffer
+
+        return response
 
 
 def debug_function(infotype: int, message: bytes):
@@ -167,19 +184,6 @@ def debug_function(infotype: int, message: bytes):
             LOGGER_HEADER_OUT.debug(line)
 
 
-@contextlib.contextmanager
-def curl_exception(*, request=None, response=None):
-    """Re-raise PycURL exceptions the equivalent `RequestException`"""
-    if not request and response and hasattr(response, 'request'):
-        request = response.request
-
-    try:
-        yield
-    except pycurl.error as e:
-        code, error_string = e.args[:2]
-        message = '{} (cURL error: {})'.format(error_string, code)
-
-        exception = EXCEPTION_MAP.get(code, exceptions.RequestException)
-
-        raise exception(message, curl_message=error_string, curl_code=code,
-                        request=request, response=response) from e
+def send(*args, **kwargs):
+    """Helper for making a Request and sending it."""
+    return Request(*args, **kwargs).send()

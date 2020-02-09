@@ -5,6 +5,7 @@ import json as json_
 from collections import abc
 from urllib.parse import urlsplit, urlunsplit, urlencode, parse_qsl, quote
 from io import BytesIO
+from typing import *
 
 import chardet
 import pycurl
@@ -63,23 +64,15 @@ class Request:
 
 
 class Response:
-    def __init__(self,
-                 prepared_request: Request = None,
-                 elapsed: datetime.timedelta = None,
-                 status_code: int = None,
-                 reason: str = None,
-                 headers: structures.CaseInsensitiveDict = None,
-                 encoding: str = None,
-                 url: str = None,
-                 buffer: BytesIO = None):
-        self._prepared_request = prepared_request
-        self._elapsed = elapsed
-        self._status_code = status_code
-        self._reason = reason
-        self._headers = headers
-        self.encoding = encoding
-        self._url = url
-        self._buffer = buffer
+    def __init__(self):
+        self.request = None  # type: Optional[Request]
+        self.elapsed = None  # type: Optional[datetime.timedelta]
+        self.status_code = None  # type: Optional[int]
+        self.reason = None  # type: Optional[str]
+        self.headers = None  # type: Optional[structures.CaseInsensitiveDict]
+        self.encoding = None  # type: Optional[str]
+        self.url = None  # type: Optional[str]
+        self.raw = None  # type: Optional[BytesIO]
 
     @property
     def apparent_encoding(self):
@@ -91,19 +84,11 @@ class Response:
 
     @property
     def content(self):
-        return self._buffer.getvalue()
+        return self.raw.getvalue()
 
     @property
     def cookies(self):
         return NotImplemented
-
-    @property
-    def elapsed(self):
-        return self._elapsed
-
-    @property
-    def headers(self):
-        return self._headers
 
     @property
     def history(self):
@@ -117,7 +102,7 @@ class Response:
     def iter_content(self, chunk_size=1, decode_unicode=False):
         chunk_size = chunk_size or -1
         decoder = codecs.getincrementaldecoder(self.encoding)('replace') if self.encoding and decode_unicode else None
-        for chunk in iter(lambda: self._buffer.read1(chunk_size), b''):
+        for chunk in iter(lambda: self.raw.read1(chunk_size), b''):
             if decoder:
                 yield decoder.decode(chunk)
             else:
@@ -174,28 +159,8 @@ class Response:
                                        response=self)
 
     @property
-    def raw(self):
-        return self._buffer
-
-    @property
-    def reason(self):
-        return self._reason
-
-    @property
-    def request(self):
-        return self._prepared_request
-
-    @property
-    def status_code(self):
-        return self._status_code
-
-    @property
     def text(self):
         return self.content.decode(self.encoding or 'ISO-8859-1')
-
-    @property
-    def url(self):
-        return self._url
 
 
 class PreparedRequest:
