@@ -148,6 +148,7 @@ def _merge_params(current, new):
     if not current:
         return new
 
+    current = current.copy()
     if isinstance(new, abc.Mapping):
         for name, value in new.items():
             current.setdefault(name, []).append(value)
