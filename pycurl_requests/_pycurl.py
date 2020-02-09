@@ -1,4 +1,3 @@
-import contextlib
 import datetime
 import io
 import warnings
@@ -15,24 +14,6 @@ from pycurl_requests import structures
 CURLINFO_TEXT = 0
 CURLINFO_HEADER_IN = 1
 CURLINFO_HEADER_OUT = 2
-
-# Mapping of cURL error codes to Request exceptions
-EXCEPTION_MAP = {
-    pycurl.E_UNSUPPORTED_PROTOCOL:      exceptions.ConnectionError,
-    pycurl.E_URL_MALFORMAT:             exceptions.InvalidURL,
-    pycurl.E_COULDNT_RESOLVE_PROXY:     exceptions.ProxyError,
-    pycurl.E_COULDNT_RESOLVE_HOST:      exceptions.ConnectionError,
-    pycurl.E_COULDNT_CONNECT:           exceptions.ConnectionError,
-    pycurl.E_OPERATION_TIMEDOUT:        exceptions.Timeout,
-    pycurl.E_SSL_CONNECT_ERROR:         exceptions.SSLError,
-    pycurl.E_INTERFACE_FAILED:          exceptions.ConnectionError,
-    pycurl.E_TOO_MANY_REDIRECTS:        exceptions.TooManyRedirects,
-    pycurl.E_GOT_NOTHING:               exceptions.ConnectionError,
-    pycurl.E_PEER_FAILED_VERIFICATION:  exceptions.SSLError,
-    pycurl.E_SSL_ISSUER_ERROR:          exceptions.SSLError,
-    pycurl.E_SSL_PINNEDPUBKEYNOTMATCH:  exceptions.SSLError,
-    pycurl.E_SSL_INVALIDCERTSTATUS:     exceptions.SSLError,
-}
 
 # Loggers
 LOGGER = logging.getLogger('curl')
@@ -139,12 +120,8 @@ class Request:
                 self.response_buffer.seek(0)
                 response = self.build_response(elapsed=end_time - start_time)
         except pycurl.error as e:
-            code, message = e.args[:2]
-            msg = '{} (cURL error: {})'.format(message, code)
-
-            exception = EXCEPTION_MAP.get(code, exceptions.RequestException)
-            raise exception(msg, curl_message=message, curl_code=code,
-                            request=self.prepared, response=response) from e
+            raise exceptions.RequestException.from_pycurl_error(
+                e, request=self.prepared, response=response) from e
 
         return response
 

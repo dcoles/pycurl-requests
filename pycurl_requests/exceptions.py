@@ -27,9 +27,20 @@ requests.exceptions
 This module contains the set of Requests' exceptions.
 """
 
+import pycurl
+
 
 class RequestException(IOError):
     """There was an ambiguous exception that occurred while handling your request."""
+
+    @classmethod
+    def from_pycurl_error(cls, error: pycurl.error, **kwargs):
+        """Create a RequestException (or subclass) from PycURL error."""
+        code, message = error.args[:2]
+        msg = '{} (cURL error: {})'.format(message, code)
+
+        exception = PYCURL_ERROR_MAPPING.get(code, cls)
+        return exception(msg, curl_message=message, curl_code=code, **kwargs)
 
     def __init__(self, *args, curl_message=None, curl_code=None, request=None, response=None):
         self.curl_message = curl_message
@@ -142,3 +153,23 @@ class FileModeWarning(RequestsWarning, DeprecationWarning):
 class RequestsDependencyWarning(RequestsWarning):
     """An imported dependency doesn't match the expected version range."""
     pass
+
+
+#: Mapping of PycURL error codes to Request exceptions
+PYCURL_ERROR_MAPPING = {
+    pycurl.E_UNSUPPORTED_PROTOCOL: ConnectionError,
+    pycurl.E_URL_MALFORMAT: InvalidURL,
+    pycurl.E_COULDNT_RESOLVE_PROXY: ProxyError,
+    pycurl.E_COULDNT_RESOLVE_HOST: ConnectionError,
+    pycurl.E_COULDNT_CONNECT: ConnectionError,
+    pycurl.E_OPERATION_TIMEDOUT: Timeout,
+    pycurl.E_SSL_CONNECT_ERROR: SSLError,
+    pycurl.E_INTERFACE_FAILED: ConnectionError,
+    pycurl.E_TOO_MANY_REDIRECTS: TooManyRedirects,
+    pycurl.E_GOT_NOTHING: ConnectionError,
+    pycurl.E_PEER_FAILED_VERIFICATION: SSLError,
+    pycurl.E_SSL_CACERT: SSLError,
+    pycurl.E_SSL_ISSUER_ERROR: SSLError,
+    pycurl.E_SSL_PINNEDPUBKEYNOTMATCH: SSLError,
+    pycurl.E_SSL_INVALIDCERTSTATUS: SSLError,
+}
