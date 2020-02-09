@@ -8,7 +8,6 @@ from io import BytesIO
 from typing import *
 
 import chardet
-import pycurl
 
 from pycurl_requests import exceptions
 from pycurl_requests import structures
@@ -204,15 +203,10 @@ class PreparedRequest:
 
         url = url.strip()
 
-        try:
-            scheme, _ = url.split(':', 1)
-        except ValueError:
-            raise exceptions.MissingSchema('Missing scheme for {!r}'.format(url))
-
-        info = pycurl.version_info()
-        protocols = info[8]
-        if scheme.lower() not in protocols:
-            raise exceptions.InvalidSchema('Unsupported scheme for {!r}'.format(url))
+        # Leave non-HTTP schemes as-is
+        if ':' in url and not url.lower().startswith('http'):
+            self.url = url
+            return
 
         parts = urlsplit(url)
         path = quote(parts.path) if parts.path else '/'

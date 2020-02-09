@@ -22,6 +22,8 @@ LOGGER_HEADER_IN = LOGGER.getChild('header_in')
 LOGGER_HEADER_OUT = LOGGER.getChild('header_out')
 DEBUGFUNCTION_LOGGERS = {LOGGER_TEXT, LOGGER_HEADER_IN, LOGGER_HEADER_OUT}
 
+VERSION_INFO = pycurl.version_info()
+
 
 class Request:
     def __init__(self, prepared, *, curl=None, timeout=None, allow_redirects=True, max_redirects=-1):
@@ -71,6 +73,15 @@ class Request:
         self.headers[name] = value.strip()
 
     def send(self):
+        try:
+            # Avoid urlparse/urlsplit as they only support RFC 3986 compatible URLs
+            scheme, _ = self.prepared.url.split(':', 1)
+        except ValueError:
+            raise exceptions.MissingSchema('Missing scheme for {!r}'.format(self.prepared.url))
+
+        supported_protocols = VERSION_INFO[8]
+        if scheme.lower() not in supported_protocols:
+            raise exceptions.InvalidSchema('Unsupported scheme for {!r}'.format(self.prepared.url))
 
         self.curl.setopt(pycurl.URL, self.prepared.url)
 
