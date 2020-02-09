@@ -1,4 +1,3 @@
-import warnings
 from collections import abc
 from typing import *
 
@@ -13,7 +12,7 @@ class Session:
     def __init__(self, *, curl: pycurl.Curl = None):
         self.auth = None
         self.cert = None
-        self.cookies = NotImplemented
+        self.cookies = None
         self.headers = structures.CaseInsensitiveDict()
         self.hooks = NotImplemented
         self.max_redirects = DEFAULT_REDIRECT_LIMIT
@@ -111,7 +110,7 @@ class Session:
             json=request.json,
             params=_merge_params(self.params, request.params),
             auth=NotImplemented,  # TODO: Merge request with Session
-            cookies=NotImplemented,  # TODO: Merge request with Session
+            cookies=_merge_params(self.cookies, request.cookies),
             hooks=NotImplemented)  # TODO: Merge request with Session
 
         return prepared

@@ -5,6 +5,7 @@ Test helper utilities.
 import json
 import threading
 import time
+from http import cookies
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlsplit, parse_qsl
 
@@ -65,6 +66,15 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
     def do_GET_slow(self):
         time.sleep(2)
         self.response('zZzZ\n')
+
+    def do_GET_cookies(self):
+        if 'Cookie' not in self.headers:
+            self.send_error(400, 'No `Cookie` header sent')
+            return
+
+        cookie = cookies.SimpleCookie()
+        cookie.load(self.headers['Cookie'])
+        self.response('\n'.join(('{}: {}'.format(n, v.coded_value) for n, v in cookie.items())))
 
     def do_HTTP_404(self):
         self.send_error(404, 'Not Found')

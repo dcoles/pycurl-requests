@@ -95,6 +95,7 @@ class Request:
         if scheme.lower() not in supported_protocols:
             raise exceptions.InvalidSchema('Unsupported scheme for {!r}'.format(self.prepared.url))
 
+        # Request
         self.curl.setopt(pycurl.URL, self.prepared.url)
 
         if self.prepared.method:

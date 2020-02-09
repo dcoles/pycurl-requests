@@ -3,6 +3,7 @@ import sys
 
 import pytest
 
+from pycurl_requests import cookies
 from pycurl_requests import requests
 from pycurl_requests import structures
 from pycurl_requests.tests.utils import *  # Used for fixtures
@@ -127,6 +128,20 @@ def test_get_iter_lines(delimiter, http_server):
         assert next(it)
 
 
+TEST_COOKIEJAR = cookies.RequestsCookieJar()
+TEST_COOKIEJAR.update({'a': 'Fizz', 'b': 'Bazz'})
+
+
+@pytest.mark.parametrize('cookies_', [{'x': 'Foo', 'y': 'Bar'}, TEST_COOKIEJAR])
+def test_cookies(http_server, cookies_):
+    response = requests.get(http_server.base_url + '/cookies', cookies=cookies_)
+
+    cookiejar = cookies.RequestsCookieJar()
+    cookiejar.update(cookies_)
+    assert response.text == '\n'.join('{}: {}'.format(*item) for item in cookiejar.items())
+
+
+# Timeouts should go last, because '/slow' hangs the HTTP server
 @pytest.mark.parametrize('timeout', [0.1, (None, 0.1)])
 def test_get_timeout(http_server, timeout):
     with pytest.raises(requests.Timeout):

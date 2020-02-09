@@ -9,6 +9,7 @@ from typing import *
 
 import chardet
 
+from pycurl_requests.cookies import RequestsCookieJar
 from pycurl_requests import exceptions
 from pycurl_requests import structures
 
@@ -238,8 +239,16 @@ class PreparedRequest:
         self.headers = headers
 
     def prepare_cookies(self, cookies):
-        # FIXME: Not implemented
-        pass
+        # Cookies can only be set if there is no existing `Cookie` header
+        if 'Cookie' in self.headers or cookies is None:
+            return
+
+        cookiejar = RequestsCookieJar()
+        cookiejar.update(cookies)
+
+        value = '; '.join(('{}={}'.format(n, v) for n, v in cookiejar.iteritems()))
+
+        self.headers['Cookie'] = value
 
     def prepare_content_length(self, body):
         content_length = None
