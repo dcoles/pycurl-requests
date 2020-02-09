@@ -4,6 +4,7 @@ Test helper utilities.
 
 import json
 import threading
+import time
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlsplit, parse_qsl
 
@@ -40,24 +41,33 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
         # Remember last requested URL
         self.server.last_url = self.url
 
-        if self.url.path == '/hello':
-            self.response('Hello\nWorld\n')
-        elif self.url.path == '/params':
-            self.response('\n'.join(('{}: {}'.format(n, v)
-                                     for n, v in parse_qsl(self.url.query))))
-        elif self.url.path == '/headers':
-            self.response('\n'.join(('{}: {}'.format(n, v)
-                                     for n, v in self.headers.items())))
-        elif self.url.path.startswith('/redirect'):
-            n = int(self.url.path[9:]) + 1 if len(self.url.path) > 9 else 1
-            self.response('Redirecting...\n', (302, 'Found'),
-                          headers={'Location': f'/redirect{n}'})
-        elif self.url.path == '/redirected':
-            self.response('Redirected\n')
-        elif self.url.path == '/json':
-            self.response(json.dumps({'Hello': 'World'}), content_type='application/json')
+        if self.url.path.startswith('/redirect'):
+            self.do_GET_redirect()
         else:
-            self.send_error(404, 'Not Found')
+            getattr(self, f'do_GET_{self.url.path[1:]}', self.do_HTTP_404)()
+
+    def do_GET_hello(self):
+        self.response('Hello\nWorld\n')
+
+    def do_GET_params(self):
+        self.response('\n'.join(('{}: {}'.format(n, v) for n, v in parse_qsl(self.url.query))))
+
+    def do_GET_headers(self):
+        self.response('\n'.join(('{}: {}'.format(n, v) for n, v in self.headers.items())))
+
+    def do_GET_redirect(self):
+        n = int(self.url.path[9:]) + 1 if len(self.url.path) > 9 else 1
+        self.response('Redirecting...\n', (302, 'Found'), headers={'Location': f'/redirect{n}'})
+
+    def do_GET_json(self):
+        self.response(json.dumps({'Hello': 'World'}), content_type='application/json')
+
+    def do_GET_slow(self):
+        time.sleep(2)
+        self.response('zZzZ\n')
+
+    def do_HTTP_404(self):
+        self.send_error(404, 'Not Found')
 
     @property
     def url(self):

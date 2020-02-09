@@ -31,8 +31,13 @@ class Request:
         self.allow_redirects = allow_redirects
         self.max_redirects = max_redirects
 
-        if timeout:
-            warnings.warn('Timeouts not implemented. Ignoring...')
+        if timeout is not None:
+            if isinstance(timeout, (int, float)):
+                self.connect_timeout, self.read_timeout = timeout, timeout
+            else:
+                self.connect_timeout, self.read_timeout = timeout
+        else:
+            self.connect_timeout, self.read_timeout = (None, None)
 
         self.response_buffer = BytesIO()
         self.reason = None
@@ -97,6 +102,12 @@ class Request:
         self.curl.setopt(pycurl.WRITEDATA, self.response_buffer)
 
         # Options
+        if self.connect_timeout is not None:
+            self.curl.setopt(pycurl.CONNECTTIMEOUT_MS, int(self.connect_timeout * 1000))
+
+        if self.read_timeout is not None:
+            self.curl.setopt(pycurl.TIMEOUT_MS, int(self.read_timeout * 1000))
+
         if self.allow_redirects:
             self.curl.setopt(pycurl.FOLLOWLOCATION, 1)
             self.curl.setopt(pycurl.POSTREDIR, pycurl.REDIR_POST_ALL)

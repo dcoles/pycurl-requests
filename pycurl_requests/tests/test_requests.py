@@ -118,3 +118,25 @@ def test_get_iter_lines(delimiter, http_server):
     assert next(it) == ''
     with pytest.raises(StopIteration):
         assert next(it)
+
+
+def test_get_timeout(http_server):
+    with pytest.raises(requests.Timeout):
+        requests.get(http_server.base_url + '/slow', timeout=0.1)
+
+
+def test_get_timeout_tuple(http_server):
+    with pytest.raises(requests.Timeout):
+        requests.get(http_server.base_url + '/slow', timeout=(None, 0.1))
+
+
+def test_get_connect_timeout():
+    with pytest.raises(requests.Timeout):
+        # RFC-5737 TEST-NET-1
+        requests.get('http://192.0.2.1', timeout=0.1)
+
+
+def test_get_connect_timeout_tuple():
+    with pytest.raises(requests.Timeout):
+        # RFC-5737 TEST-NET-1
+        requests.get('http://192.0.2.1', timeout=(0.1, None))

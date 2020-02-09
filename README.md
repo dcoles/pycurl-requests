@@ -150,7 +150,6 @@ Log records are split into dedicated sub-loggers for each type of record:
 ## Known limitations
 
 - No support for [Cookies](https://requests.readthedocs.io/en/master/user/quickstart/#cookies)
-- No support for [timeouts](https://requests.readthedocs.io/en/master/user/quickstart/#timeouts)
 - No support for [client-side certificates](https://requests.readthedocs.io/en/master/user/advanced/#client-side-certificates)
 - No support for [proxies](https://requests.readthedocs.io/en/master/user/advanced/#proxies)
 - No support for [link headers](https://requests.readthedocs.io/en/master/user/advanced/#link-headers) (e.g. [`Response.links`](https://requests.readthedocs.io/en/master/api/#requests.Response.links))
