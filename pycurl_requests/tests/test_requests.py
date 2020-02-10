@@ -127,7 +127,8 @@ def test_get_iter_lines(delimiter, http_server):
     it = response.iter_lines(5, decode_unicode=True, delimiter=delimiter)
     assert next(it) == 'Hello'
     assert next(it) == 'World'
-    assert next(it) == ''
+    if delimiter is not None:
+        assert next(it) == ''
     with pytest.raises(StopIteration):
         assert next(it)
 

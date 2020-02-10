@@ -119,21 +119,24 @@ class Response:
                 yield tail
 
     def iter_lines(self, chunk_size=512, decode_unicode=False, delimiter=None):
-        delimiter = delimiter or ('\n' if self.encoding and decode_unicode else b'\n')
-
         leftover = None
         for chunk in self.iter_content(chunk_size, decode_unicode=decode_unicode):
-            while True:
-                parts = chunk.split(delimiter, 1)
-                if len(parts) == 1:
-                    leftover = parts[0]
-                    break
-                elif leftover:
-                    chunk = parts[1]
-                    yield leftover + parts[0]
-                else:
-                    chunk = parts[1]
-                    yield parts[0]
+            if leftover:
+                chunk = leftover + chunk
+
+            if delimiter is not None:
+                parts = chunk.split(delimiter)
+            else:
+                parts = chunk.splitlines()
+
+            # FIXME: This logic doesn't work for CR-only line endings
+            if chr(ord(chunk[-1])) == '\n':
+                yield from parts
+                leftover = None
+            else:
+                # This may be a partial line, so add to the next chunk
+                yield from parts[:-1]
+                leftover = parts[-1]
 
         if leftover is not None:
             yield leftover
