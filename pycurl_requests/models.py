@@ -99,6 +99,10 @@ class Response:
         # Moved Permanently (HTTP 301) or Permanent Redirect (HTTP 308)
         return self.status_code in {301, 308}
 
+    @property
+    def is_redirect(self):
+        return self.status_code in {301, 302, 303, 307, 308}
+
     def iter_content(self, chunk_size=1, decode_unicode=False):
         chunk_size = chunk_size or -1
         decoder = codecs.getincrementaldecoder(self.encoding)('replace') if self.encoding and decode_unicode else None
