@@ -10,6 +10,7 @@ import pycurl
 import pytest
 
 from pycurl_requests import requests
+from pycurl_requests import cookies
 from pycurl_requests.tests.utils import *  # Used for fixtures
 
 
@@ -41,3 +42,27 @@ def test_session_max_redirects(http_server):
             s.get(http_server.base_url + '/redirect')
 
     assert http_server.last_url.path == '/redirect3'
+
+
+def test_session_parameters(http_server):
+    with requests.Session() as s:
+        s.params = {'a': 1, 'b': 2}
+        response = s.get(http_server.base_url + '/params', params={'b': 3, 'c': 4})
+
+    assert response.text == 'a: 1\nb: 3\nc: 4'
+
+
+COOKIEJAR1 = cookies.RequestsCookieJar()
+COOKIEJAR1.update({'a': 'Fizz', 'b': 'Bazz'})
+
+COOKIEJAR2 = cookies.RequestsCookieJar()
+COOKIEJAR2.update({'b': 'Buzz', 'c': 'Boo'})
+
+
+@pytest.mark.parametrize('cookies_', [{'b': 'Buzz', 'c': 'Boo'}, COOKIEJAR2])
+def test_session_cookies(http_server, cookies_):
+    with requests.Session() as s:
+        s.cookies = COOKIEJAR1
+        response = s.get(http_server.base_url + '/cookies', cookies=cookies_)
+
+    assert response.text == 'a: Fizz\nb: Buzz\nc: Boo'
