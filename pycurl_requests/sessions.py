@@ -14,7 +14,7 @@ class SessionRedirectMixin:
 
 
 class Session:
-    def __init__(self, *, curl: pycurl.Curl = None):
+    def __init__(self):
         self.auth = None
         self.cert = None
         self.cookies = None
@@ -27,7 +27,7 @@ class Session:
         self.trust_env = True
         self.verify = True
 
-        self.curl = curl or pycurl.Curl()
+        self.curl = pycurl.Curl()
 
     def __enter__(self):
         return self
