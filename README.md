@@ -94,20 +94,22 @@ mostly applicable.
 
 ### cURL options
 
-It is possible customize the behaviour of cURL by passing a custom
-[`pycurl.Curl`](http://pycurl.io/docs/latest/curlobject.html) handle into the
-[`request`](https://requests.readthedocs.io/en/master/api/#requests.request)-like functions.
+It is possible customize cURL's behaviour using the `curl` attribute on a
+[`Session object`](https://requests.readthedocs.io/en/master/user/advanced/#session-objects).
 
-For example, to make a request without getting the body:
+For example, to make a request without requesting the body:
 
 ```python
 import pycurl
 import pycurl_requests as requests
 
-c = pycurl.Curl()
-c.setopt(c.NOBODY, 1)
-response = requests.get('http://example.com', curl=c)
+with requests.Session() as session:
+    session.curl.setopt(pycurl.NOBODY, 1)
+    response = session.get('http://example.com')
 ```
+
+See the [`pycurl.Curl` object](http://pycurl.io/docs/latest/curlobject.html) documentation
+for all possible `curl` attribute methods.
 
 ### cURL exceptions
 
