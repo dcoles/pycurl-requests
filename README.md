@@ -155,7 +155,6 @@ Log records are split into dedicated sub-loggers for each type of record:
 - No support for [client-side certificates](https://requests.readthedocs.io/en/master/user/advanced/#client-side-certificates)
 - No support for [proxies](https://requests.readthedocs.io/en/master/user/advanced/#proxies)
 - No support for [link headers](https://requests.readthedocs.io/en/master/user/advanced/#link-headers) (e.g. [`Response.links`](https://requests.readthedocs.io/en/master/api/#requests.Response.links))
-- No support for [authentication](https://requests.readthedocs.io/en/master/user/authentication/)
 - No support for [sending multi-part encoded files](https://requests.readthedocs.io/en/master/user/advanced/#post-multiple-multipart-encoded-files))
 - Basic support for [`Session` objects](https://requests.readthedocs.io/en/master/user/advanced/#session-objects) (e.g. [`requests.Session`](https://requests.readthedocs.io/en/master/api/#requests.Session))
 

@@ -9,6 +9,7 @@ from typing import *
 
 import chardet
 
+from pycurl_requests.auth import HTTPBasicAuth, CurlAuth
 from pycurl_requests.cookies import RequestsCookieJar
 from pycurl_requests import exceptions
 from pycurl_requests import structures
@@ -178,6 +179,9 @@ class PreparedRequest:
         self.body = None
         self.hooks = None
 
+        # Extensions
+        self.curl_auth = None
+
     @property
     def path_url(self):
         return urlsplit(self.url).path
@@ -304,8 +308,21 @@ class PreparedRequest:
             self.headers[key] = default
 
     def prepare_auth(self, auth, url=''):
-        # FIXME: Not implemented
-        pass
+        if not auth:
+            return
+
+        if isinstance(auth, tuple):
+            username, password = auth
+            self.curl_auth = HTTPBasicAuth(username, password)
+        elif isinstance(auth, CurlAuth):
+            # Handled by libcurl
+            self.curl_auth = auth
+        else:
+            # Allow auth to make its changes
+            r = auth(self)
+            self.__dict__.update(r.__dict__)
+
+            self.prepare_content_length(self.body)
 
     def prepare_hooks(self, hooks):
         # FIXME: Not implemented
