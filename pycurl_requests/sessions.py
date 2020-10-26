@@ -3,6 +3,7 @@ from typing import *
 
 import pycurl
 
+from pycurl_requests.auth import HTTPBasicAuth, CurlAuth
 from pycurl_requests.models import Request, PreparedRequest, Response, DEFAULT_REDIRECT_LIMIT
 from pycurl_requests import structures
 from pycurl_requests import _pycurl
@@ -114,7 +115,7 @@ class Session:
             data=request.data,
             json=request.json,
             params=_merge_params(self.params, request.params),
-            auth=NotImplemented,  # TODO: Merge request with Session
+            auth=request.auth or self.auth,
             cookies=_merge_params(self.cookies, request.cookies),
             hooks=NotImplemented)  # TODO: Merge request with Session
 

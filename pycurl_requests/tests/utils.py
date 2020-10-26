@@ -76,6 +76,14 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
         cookie.load(self.headers['Cookie'])
         self.response('\n'.join(('{}: {}'.format(n, v.coded_value) for n, v in cookie.items())))
 
+    def do_GET_auth(self):
+        authorization = self.headers.get('Authorization')
+        if not authorization:
+            self.response('', status=(401, 'Unauthorized'), headers={'WWW-Authenticate': 'Basic realm=Test'})
+            return
+
+        self.response('Authorization: {}\n'.format(authorization))
+
     def do_HTTP_404(self):
         self.send_error(404, 'Not Found')
 

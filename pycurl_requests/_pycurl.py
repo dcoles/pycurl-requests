@@ -104,6 +104,9 @@ class Request:
         if self.prepared.method == 'HEAD':
             self.curl.setopt(pycurl.NOBODY, 1)
 
+        # HTTP server authentication
+        self._prepare_http_auth()
+
         self.curl.setopt(pycurl.HTTPHEADER, ['{}: {}'.format(n, v) for n, v in self.prepared.headers.items()])
 
         if self.prepared.body is not None:
@@ -145,6 +148,12 @@ class Request:
             self.curl.setopt(pycurl.DEBUGFUNCTION, debug_function)
 
         return self.perform()
+
+    def _prepare_http_auth(self):
+        if not self.prepared.curl_auth:
+            return
+
+        self.prepared.curl_auth.setopts(self.curl)
 
     def perform(self):
         try:
