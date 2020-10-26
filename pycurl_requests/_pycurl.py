@@ -42,7 +42,7 @@ class Request:
         if timeout is not None:
             if isinstance(timeout, (int, float)):
                 self.connect_timeout, self.read_timeout = timeout, timeout
-            elif isinstance(timeout, Timeout):
+            elif Timeout and isinstance(timeout, Timeout):
                 timeout.start_connect()
                 self.connect_timeout = (0 if timeout.connect_timeout is Timeout.DEFAULT_TIMEOUT
                                         else timeout.connect_timeout)

@@ -160,7 +160,7 @@ def test_get_timeout_urllib3(http_server, timeout):
         requests.get(http_server.base_url + '/slow', timeout=timeout)
 
 
-@pytest.mark.parametrize('timeout', [0.1, (0.1, None), Timeout(connect=0.1), Timeout(total=0.1)])
+@pytest.mark.parametrize('timeout', [0.1, (0.1, None)])
 def test_get_connect_timeout(http_server, timeout):
     with pytest.raises(requests.Timeout):
         # Use RFC-5737 TEST-NET-1 address since it should always be unreachable
