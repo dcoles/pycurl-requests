@@ -5,7 +5,7 @@
 
 ## Requirements
 
-- Python 3.5+
+- Python 3.6+
 - [PycURL](https://github.com/pycurl/pycurl)
 - [chardet](https://github.com/chardet/chardet)
 
