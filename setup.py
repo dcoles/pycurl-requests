@@ -20,6 +20,5 @@ setup(
     install_requires=[
         'pycurl',
         'chardet',
-        'pytest',
     ],
 )
