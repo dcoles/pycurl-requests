@@ -32,7 +32,8 @@ def test_connecterror_resolve():
     if IS_PYCURL_REQUESTS:
         assert isinstance(exception.__cause__, pycurl.error)
         assert exception.curl_code == pycurl.E_COULDNT_RESOLVE_HOST
-        assert 'Could not resolve host' in exception.curl_message
+        # Some versions of curl return "Couldn't" instead of "Could not"
+        assert 't resolve host' in exception.curl_message
 
 
 def test_toomanyredirects(http_server):
