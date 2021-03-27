@@ -1,4 +1,5 @@
 import datetime
+import http.client
 import io
 from io import BytesIO
 import logging
@@ -47,7 +48,7 @@ class Request:
                 self.connect_timeout = (0 if timeout.connect_timeout is Timeout.DEFAULT_TIMEOUT
                                         else timeout.connect_timeout)
                 self.read_timeout = (0 if timeout.read_timeout is Timeout.DEFAULT_TIMEOUT
-                                       else timeout.read_timeout)
+                                     else timeout.read_timeout)
             else:
                 self.connect_timeout, self.read_timeout = timeout
         else:
@@ -55,12 +56,12 @@ class Request:
 
         self.response_buffer = BytesIO()
         self.reason = None
-        self.headers = structures.CaseInsensitiveDict()
+        self.headers = http.client.HTTPMessage()
         self.reset_headers = False
 
     def header_function(self, line: bytes):
         if self.reset_headers:
-            self.headers = structures.CaseInsensitiveDict()
+            self.headers = http.client.HTTPMessage()
             self.reset_headers = False
 
         try:
@@ -181,7 +182,7 @@ class Request:
         response.elapsed = elapsed
         response.status_code = status_code
         response.reason = self.reason
-        response.headers = self.headers
+        response.headers = structures.CaseInsensitiveDict(self.headers)
         response.encoding = self.headers.get_content_charset()
         response.url = self.prepared.url
         response.raw = self.response_buffer
