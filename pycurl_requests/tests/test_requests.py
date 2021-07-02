@@ -88,6 +88,19 @@ def test_get_response_headers(http_server):
     assert response.headers['FooBar'] == 'foo, bar'
 
 
+def test_get_response_set_cookie(http_server):
+    response = requests.get(
+        http_server.base_url + '/response/headers',
+        params=[
+            ('Set-Cookie', 'test!'),
+            ('Set-Cookie', 'PHPSESSID=8536fl1c5igh89aqsjuf3l40jm; path=/'),
+            ('Set-Cookie', 'TestCookie=%3A%202595; expires=Thu, 01-Jul-2021 07:56:03 GMT; Max-Age=3600'),
+        ])
+    response.raise_for_status()
+
+    assert response.headers['Set-Cookie'] == 'test!, PHPSESSID=8536fl1c5igh89aqsjuf3l40jm; path=/, TestCookie=%3A%202595; expires=Thu, 01-Jul-2021 07:56:03 GMT; Max-Age=3600'
+
+
 def test_get_redirect_nofollow(http_server):
     response = requests.get(http_server.base_url + '/redirect', allow_redirects=False)
     response.raise_for_status()
