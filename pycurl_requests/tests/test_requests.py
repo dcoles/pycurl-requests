@@ -80,6 +80,14 @@ def test_get_headers(http_server):
     assert headers['Bar'] == 'bar'
 
 
+def test_get_response_headers(http_server):
+    response = requests.get(http_server.base_url + '/response/headers', params=[('Foo', 'foo'), ('FooBar', 'foo'), ('FooBar', 'bar')])
+    response.raise_for_status()
+
+    assert response.headers['Foo'] == 'foo'
+    assert response.headers['FooBar'] == 'foo, bar'
+
+
 def test_get_redirect_nofollow(http_server):
     response = requests.get(http_server.base_url + '/redirect', allow_redirects=False)
     response.raise_for_status()

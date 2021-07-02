@@ -45,7 +45,8 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
         if self.url.path.startswith('/redirect'):
             self.do_GET_redirect()
         else:
-            getattr(self, f'do_GET_{self.url.path[1:]}', self.do_HTTP_404)()
+            path = self.url.path[1:].replace('/', '_')
+            getattr(self, f'do_GET_{path}', self.do_HTTP_404)()
 
     def do_GET_hello(self):
         self.response('Hello\nWorld\n')
@@ -84,6 +85,11 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
 
         self.response('Authorization: {}\n'.format(authorization))
 
+    def do_GET_response_headers(self):
+        params = parse_qsl(self.url.query)
+
+        self.response('Headers\n', headers=params)
+
     def do_HTTP_404(self):
         self.send_error(404, 'Not Found')
 
@@ -103,7 +109,7 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
         self.send_response(*status)
         self.send_header('Content-Type', content_type)
         self.send_header('Content-Length', len(body))
-        for key, value in headers.items():
+        for key, value in headers.items() if isinstance(headers, dict) else headers:
             self.send_header(key, value)
         self.end_headers()
 
