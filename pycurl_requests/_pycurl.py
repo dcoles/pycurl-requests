@@ -83,7 +83,7 @@ class Request:
             return
 
         name, value = line.split(':', 1)
-        self.headers[name] = value.strip()
+        self.headers.add_header(name, value.strip())
 
     def send(self):
         try:
@@ -182,7 +182,9 @@ class Request:
         response.elapsed = elapsed
         response.status_code = status_code
         response.reason = self.reason
-        response.headers = structures.CaseInsensitiveDict(self.headers)
+        # Merge headers as allowed by RFC-7230 section 3.3.2
+        response.headers = structures.CaseInsensitiveDict(
+            ((k, ', '.join(self.headers.get_all(k))) for k in self.headers.keys()))
         response.encoding = self.headers.get_content_charset()
         response.url = self.prepared.url
         response.raw = self.response_buffer
