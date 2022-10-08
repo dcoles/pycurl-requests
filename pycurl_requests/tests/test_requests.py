@@ -68,7 +68,7 @@ def test_get_params_list(http_server, sequence_type):
 
 
 def test_get_headers(http_server):
-    response = requests.get(http_server.base_url + '/headers', headers={'Foo': 'foo', 'Bar': 'bar'})
+    response = requests.get(http_server.base_url + '/headers', headers={'Foo': 'foo', 'Bar': b'bar', 'Baz': '\U0001F60A'.encode()})
     response.raise_for_status()
 
     headers = CaseInsensitiveDict()
@@ -78,7 +78,7 @@ def test_get_headers(http_server):
 
     assert headers['Foo'] == 'foo'
     assert headers['Bar'] == 'bar'
-
+    assert headers['Baz'].encode('iso-8859-1') == '\U0001F60A'.encode()  # Yes, this is mojibake
 
 def test_get_response_headers(http_server):
     response = requests.get(http_server.base_url + '/response/headers', params=[('Foo', 'foo'), ('FooBar', 'foo'), ('FooBar', 'bar')])

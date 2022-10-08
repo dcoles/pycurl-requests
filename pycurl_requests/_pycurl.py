@@ -109,7 +109,7 @@ class Request:
         # HTTP server authentication
         self._prepare_http_auth()
 
-        self.curl.setopt(pycurl.HTTPHEADER, ['{}: {}'.format(n, v) for n, v in self.prepared.headers.items()])
+        self.curl.setopt(pycurl.HTTPHEADER, [render_header(h) for h in self.prepared.headers.items()])
 
         if self.prepared.body is not None:
             if isinstance(self.prepared.body, str):
@@ -236,3 +236,17 @@ def get_encoding_from_headers(headers: http.client.HTTPMessage) -> Optional[str]
         return 'utf-8'
 
     return None
+
+
+def render_header(header: Tuple[Union[str, bytes], Union[str, bytes]]) -> bytes:
+    """
+    Render HTTP header.
+    """
+    key, value = header
+
+    encoded = bytearray()
+    encoded.extend(key if isinstance(key, bytes) else key.encode('iso-8859-1'))
+    encoded.extend(b': ')
+    encoded.extend(value if isinstance(value, bytes) else value.encode('iso-8859-1'))
+
+    return bytes(encoded)
