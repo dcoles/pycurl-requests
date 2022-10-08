@@ -1,3 +1,7 @@
+"""
+PyCurl adapters.
+"""
+
 import datetime
 import http.client
 import io
@@ -10,6 +14,7 @@ import pycurl
 from pycurl_requests import exceptions
 from pycurl_requests import models
 from pycurl_requests import structures
+from pycurl_requests.adapters.base import BaseAdapter
 
 try:
     from urllib3.util.timeout import Timeout
@@ -33,7 +38,52 @@ DEBUGFUNCTION_LOGGERS = {LOGGER_TEXT, LOGGER_HEADER_IN, LOGGER_HEADER_OUT}
 VERSION_INFO = pycurl.version_info()
 
 
-class Request:
+class PyCurlBaseAdapter(BaseAdapter):
+    """
+    Base adapter for PyCurl.
+    """
+    def __init__(self, curl: pycurl.Curl) -> None:
+        super().__init__()
+        self.curl = curl or pycurl.Curl()
+
+    def close(self) -> None:
+        if self.curl:
+            self.curl.close()
+
+        self.curl = None
+
+
+class PyCurlHttpAdapter(PyCurlBaseAdapter):
+    """
+    HTTP adapter for PyCurl.
+
+    Usage::
+      >>> import pycurl_requests as requests
+      >>> s = requests.Session()
+      >>> a = requests.adapters.HTTPAdapter(max_retries=3)
+      >>> s.mount('http://', a)
+    """
+    def send(self, request, stream=False, timeout=None, verify=True, cert=None, proxies=None, **kwargs) -> None:
+        if stream:
+            raise NotImplementedError('stream not supported')
+
+        if cert:
+            raise NotImplementedError('cert not supported')
+
+        if proxies:
+            raise NotImplementedError('proxies not supported')
+
+        pycurl_request = PyCurlRequest(
+            request,
+            curl = self.curl,
+            timeout = timeout,
+            **kwargs
+        )
+
+        return pycurl_request.send()
+
+
+class PyCurlRequest:
     def __init__(self, prepared, *, curl=None, timeout=None, allow_redirects=True, max_redirects=-1):
         self.prepared = prepared
         self.curl = curl or pycurl.Curl()
@@ -152,7 +202,7 @@ class Request:
         return self.perform()
 
     def _prepare_http_auth(self):
-        if not self.prepared.curl_auth:
+        if not (hasattr(self.prepared, 'curl_auth') and self.prepared.curl_auth):
             return
 
         self.prepared.curl_auth.setopts(self.curl)
@@ -209,11 +259,6 @@ def debug_function(infotype: int, message: bytes):
     elif infotype == CURLINFO_HEADER_OUT:
         for line in message.splitlines():
             LOGGER_HEADER_OUT.debug(line)
-
-
-def send(*args, **kwargs):
-    """Helper for making a Request and sending it."""
-    return Request(*args, **kwargs).send()
 
 
 def get_encoding_from_headers(headers: http.client.HTTPMessage) -> Optional[str]:

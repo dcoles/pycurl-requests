@@ -93,7 +93,8 @@ class Response:
 
     @property
     def history(self):
-        return NotImplemented
+        # NotImplemented
+        return []
 
     @property
     def is_permanent_redirect(self):

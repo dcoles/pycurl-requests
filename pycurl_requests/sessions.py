@@ -1,12 +1,13 @@
-from collections import abc
+from collections import OrderedDict
 from typing import *
 
 import pycurl
+from pycurl_requests import adapters
 
 from pycurl_requests.auth import HTTPBasicAuth, CurlAuth
+from pycurl_requests.exceptions import InvalidSchema
 from pycurl_requests.models import Request, PreparedRequest, Response, DEFAULT_REDIRECT_LIMIT
 from pycurl_requests import structures
-from pycurl_requests import _pycurl
 
 
 # Stubbed out for Requests tests
@@ -29,6 +30,10 @@ class Session:
         self.verify = True
 
         self.curl = pycurl.Curl()
+
+        self.adapters = OrderedDict()
+        self.mount('https://', adapters.PyCurlHttpAdapter(self.curl))
+        self.mount('http://', adapters.PyCurlHttpAdapter(self.curl))
 
     def __enter__(self):
         return self
@@ -79,14 +84,17 @@ class Session:
 
         prepared = self.prepare_request(request)
 
-        settings = dict(curl=self.curl, timeout=timeout, allow_redirects=allow_redirects,
-                        max_redirects=self.max_redirects)
+        settings = dict(timeout=timeout, allow_redirects=allow_redirects, max_redirects=self.max_redirects)
         settings.update(self.merge_environment_settings(prepared.url, proxies, stream, verify, cert))
 
         return self.send(prepared, **settings)
 
-    def get_adapter(self, url) -> NotImplemented:
-        raise NotImplementedError
+    def get_adapter(self, url) -> adapters.BaseAdapter:
+        for (prefix, adapter) in self.adapters.items():
+            if url.lower().startswith(prefix.lower()):
+                return adapter
+
+        raise InvalidSchema(f'No connection adapters were found for {url!r}')
 
     def get_redirect_target(self, resp: Response) -> Optional[str]:
         raise NotImplementedError
@@ -96,7 +104,16 @@ class Session:
         return {}
 
     def mount(self, prefix, adapter):
-        raise NotImplementedError
+        """
+        Registers a connection adapter to a prefix.
+
+        Adapters are sorted in descending order by prefix length.
+        """
+        self.adapters[prefix] = adapter
+        keys_to_move = [k for k in self.adapters if len(k) < len(prefix)]
+
+        for key in keys_to_move:
+            self.adapters[key] = self.adapters.pop(key)
 
     def prepare_request(self, request: Request) -> PreparedRequest:
         prepared = PreparedRequest()
@@ -135,7 +152,9 @@ class Session:
         raise NotImplementedError
 
     def send(self, request: PreparedRequest, **kwargs):
-        return _pycurl.send(request, **kwargs)
+        adapter = self.get_adapter(request.url)
+
+        return adapter.send(request, **kwargs)
 
     def should_strip_auth(self, old_url, new_url):
         raise NotImplementedError

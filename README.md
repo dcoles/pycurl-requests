@@ -94,6 +94,24 @@ This library aims to be API compatible with [Requests](https://github.com/psf/re
 thus the [Requests documentation](https://requests.readthedocs.io/en/master/) should be
 mostly applicable.
 
+### Adapters
+
+PycURL support is implemented as a [transport adapter](https://requests.readthedocs.io/en/latest/user/advanced/#transport-adapters).
+This means it's possible to use PycURL with the Requests library itself!
+
+```python
+import pycurl
+import requests
+from pycurl_requests.adapters import PyCurlHttpAdapter
+
+with requests.Session() as session:
+    curl = pycurl.Curl()
+    session.mount('https://', PyCurlHttpAdapter(curl))
+    session.mount('http://', PyCurlHttpAdapter(curl))
+
+    response = session.get('http://example.com')
+```
+
 ### cURL options
 
 It is possible customize cURL's behaviour using the `curl` attribute on a
