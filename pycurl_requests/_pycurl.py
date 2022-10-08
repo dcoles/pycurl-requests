@@ -3,6 +3,7 @@ import http.client
 import io
 from io import BytesIO
 import logging
+from typing import *
 
 import pycurl
 
@@ -185,7 +186,7 @@ class Request:
         # Merge headers as allowed by RFC-7230 section 3.3.2
         response.headers = structures.CaseInsensitiveDict(
             ((k, ', '.join(self.headers.get_all(k))) for k in self.headers.keys()))
-        response.encoding = self.headers.get_content_charset()
+        response.encoding = get_encoding_from_headers(self.headers)
         response.url = self.prepared.url
         response.raw = self.response_buffer
 
@@ -213,3 +214,25 @@ def debug_function(infotype: int, message: bytes):
 def send(*args, **kwargs):
     """Helper for making a Request and sending it."""
     return Request(*args, **kwargs).send()
+
+
+def get_encoding_from_headers(headers: http.client.HTTPMessage) -> Optional[str]:
+    """
+    Return encoding based on HTTP headers.
+    """
+    charset = headers.get_content_charset()
+    if charset:
+        return charset
+
+    content_type = headers.get('Content-Type')
+    if not content_type:
+        return None
+
+    if content_type.startswith('text/'):
+        return 'iso-8859-1'
+
+    if content_type.startswith('application/json'):
+        # Assume UTF-8 based on RFC 4627
+        return 'utf-8'
+
+    return None
