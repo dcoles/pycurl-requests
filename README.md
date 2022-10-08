@@ -178,8 +178,6 @@ Log records are split into dedicated sub-loggers for each type of record:
 - No support for [sending multi-part encoded files](https://requests.readthedocs.io/en/master/user/advanced/#post-multiple-multipart-encoded-files)
 - Basic support for [`Session` objects](https://requests.readthedocs.io/en/master/user/advanced/#session-objects) (e.g. [`requests.Session`](https://requests.readthedocs.io/en/master/api/#requests.Session))
 
-Most of these features should be supported in the near future.
-
 ## License
 
 Licensed under the MIT License.
