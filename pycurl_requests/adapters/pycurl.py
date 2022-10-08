@@ -156,6 +156,9 @@ class PyCurlRequest:
         if self.prepared.method == 'HEAD':
             self.curl.setopt(pycurl.NOBODY, 1)
 
+        # Automatically decompress downloads
+        self.curl.setopt(pycurl.ACCEPT_ENCODING, '')
+
         # HTTP server authentication
         self._prepare_http_auth()
 
