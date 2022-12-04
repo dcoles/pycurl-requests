@@ -3,6 +3,7 @@ Test helper utilities.
 """
 
 import json
+import random
 import threading
 import time
 from http import cookies
@@ -13,11 +14,14 @@ import pytest
 
 from pycurl_requests import requests
 
-__all__ = ['IS_PYCURL_REQUESTS', 'http_server']
+__all__ = ['IS_PYCURL_REQUESTS', 'http_server', 'test_data']
 
 #: Is this _really_ PyCurl-Requests?
 #: Should be used when testing for PyCurl-Requests extensions.
 IS_PYCURL_REQUESTS = requests.__name__ == 'pycurl_requests'
+
+
+test_data = bytes(random.getrandbits(8) for _ in range(123456))
 
 
 @pytest.fixture(scope='module')
@@ -92,6 +96,44 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
 
     def do_HTTP_404(self):
         self.send_error(404, 'Not Found')
+
+    def do_POST(self):
+        path = self.url.path[1:].replace('/', '_')
+        getattr(self, f'do_POST_{path}', self.do_HTTP_404)()
+
+    def do_POST_stream(self):
+        self.POST_stream_helper(allow_chunked=True)
+
+    def do_POST_stream_no_chunked(self):
+        self.POST_stream_helper(allow_chunked=False)
+
+    def POST_stream_helper(self, allow_chunked: bool):
+        if "Content-Length" in self.headers:
+            content_length = int(self.headers["Content-Length"])
+            body = self.rfile.read(content_length)
+        elif "Transfer-Encoding" in self.headers and "chunked" in self.headers["Transfer-Encoding"]:
+            if not allow_chunked:
+                self.response('This endpoint has chunked transfer deactivated.', status=(400, "Bad Request"))
+                return
+            body = b""
+            while True:
+                line = self.rfile.readline()
+                chunk_length = int(line, 16)
+                if chunk_length != 0:
+                    chunk = self.rfile.read(chunk_length)
+                    body += chunk
+                self.rfile.readline()
+                if chunk_length == 0:
+                    break
+        else:
+            self.response('Missing Content-Length or Transfer-Encoding header.', status=(400, "Bad Request"))
+            return
+
+        if body == test_data:
+            self.response('Upload succeeded.')
+        else:
+            self.response('Upload failed.', status=(400, "Bad Request"))
+
 
     @property
     def url(self):
