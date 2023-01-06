@@ -83,6 +83,21 @@ class PyCurlHttpAdapter(PyCurlBaseAdapter):
         return pycurl_request.send()
 
 
+class ChunkIterableReader:
+    def __init__(self, iterator: Iterator[bytes]):
+        self._iterator = iterator
+
+    def read(self, ignored) -> bytes:
+        return bytes(next(self._iterator, b""))
+
+    def close(self): # TODO
+        try:
+            self._iterator.close()
+        except AttributeError:
+            pass
+
+
+
 class PyCurlRequest:
     def __init__(self, prepared, *, curl=None, timeout=None, allow_redirects=True, max_redirects=-1):
         self.prepared = prepared
@@ -167,13 +182,31 @@ class PyCurlRequest:
         if self.prepared.body is not None:
             if isinstance(self.prepared.body, str):
                 body = io.BytesIO(self.prepared.body.encode('iso-8859-1'))
+                self.curl.setopt(pycurl.READDATA, body)
             elif isinstance(self.prepared.body, bytes):
                 body = io.BytesIO(self.prepared.body)
+                self.curl.setopt(pycurl.READDATA, body)
+            elif isinstance(self.prepared.body, (io.RawIOBase, io.BufferedIOBase)):
+                self.curl.setopt(pycurl.READFUNCTION, self.prepared.body.read)
+                self.curl.setopt(pycurl.TRANSFER_ENCODING, 1)
+            elif hasattr(self.prepared.body, "__iter__"):  # TODO: call iter instead of checking (e.g. to support delegates)
+                try:
+                    n_bytes = len(self.prepared.body)
+                except TypeError:
+                    # "(Since 7.66.0, libcurl will automatically use chunked encoding for POSTs if the size is unknown.)"
+                    self.curl.setopt(pycurl.TRANSFER_ENCODING, 1)
+                else:
+                    self.curl.setopt(pycurl.TRANSFER_ENCODING, 0)
+                    self.curl.setopt(pycurl.INFILESIZE_LARGE, n_bytes)
+                reader = ChunkIterableReader(iter(self.prepared.body))
+                self.curl.setopt(pycurl.READFUNCTION, reader.read)
+                # TODO: throw exceptions to the iterator (requests doesn't do this but would facilitate error handling)
             else:
                 body = self.prepared.body
+                self.curl.setopt(pycurl.READDATA, body)
 
             self.curl.setopt(pycurl.UPLOAD, 1)
-            self.curl.setopt(pycurl.READDATA, body)
+
 
         content_length = self.prepared.headers.get('Content-Length')
         if content_length is not None:
