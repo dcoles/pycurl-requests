@@ -19,7 +19,7 @@ def patch_requests():
     """Patch Requests library with PycURL Requests"""
     import sys
 
-    for module in ('requests', 'request.adapters', 'requests.api', 'requests.cookies', 'requests.exceptions',
+    for module in ('requests', 'requests.adapters', 'requests.api', 'requests.cookies', 'requests.exceptions',
                    'requests.models', 'requests.sessions', 'requests.structures'):
         sys.modules[module] = sys.modules[module.replace('requests', __name__, 1)]
 
