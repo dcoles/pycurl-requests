@@ -243,7 +243,7 @@ class PreparedRequest:
         headers = headers or structures.CaseInsensitiveDict()
 
         # Filter out headers with None value
-        header_names = headers.keys()
+        header_names = list(headers.keys())
         for name in header_names:
             if headers[name] is None:
                 del headers[name]
