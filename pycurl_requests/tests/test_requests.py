@@ -68,7 +68,7 @@ def test_get_params_list(http_server, sequence_type):
 
 
 def test_get_headers(http_server):
-    response = requests.get(http_server.base_url + '/headers', headers={'Foo': 'foo', 'Bar': b'bar', 'Baz': '\U0001F60A'.encode()})
+    response = requests.get(http_server.base_url + '/headers', headers={'Foo': 'foo', 'bat': None, 'Bar': b'bar', 'Baz': '\U0001F60A'.encode()})
     response.raise_for_status()
 
     headers = CaseInsensitiveDict()
