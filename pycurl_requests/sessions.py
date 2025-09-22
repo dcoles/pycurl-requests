@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import *
+from typing import Generator, Optional
 
 import pycurl
 from pycurl_requests import adapters
