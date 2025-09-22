@@ -7,7 +7,7 @@ import http.client
 import io
 from io import BytesIO
 import logging
-from typing import *
+from typing import Optional, Tuple, Union
 
 import pycurl
 

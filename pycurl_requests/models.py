@@ -5,7 +5,7 @@ import json as json_
 from collections import abc
 from urllib.parse import urlsplit, urlunsplit, urlencode, parse_qsl, quote
 from io import BytesIO
-from typing import *
+from typing import Optional
 
 import chardet
 
