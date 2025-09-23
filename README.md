@@ -3,7 +3,7 @@
 **PycURL Requests** is a [Requests](https://github.com/psf/requests)-compatible interface for
 [PycURL](https://github.com/pycurl/pycurl).
 
-[![pycurl-requests](https://circleci.com/gh/dcoles/pycurl-requests.svg?style=shield)](https://circleci.com/gh/dcoles/pycurl-requests)
+[![pycurl-requests](https://github.com/dcoles/pycurl-requests/actions/workflows/python-app.yml/badge.svg)](https://github.com/dcoles/pycurl-requests/actions/workflows/python-app.yml)
 
 ## Requirements
 
