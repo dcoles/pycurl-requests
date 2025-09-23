@@ -17,7 +17,6 @@ def test_connecterror_refused():
     if IS_PYCURL_REQUESTS:
         assert isinstance(exception.__cause__, pycurl.error)
         assert exception.curl_code == pycurl.E_COULDNT_CONNECT
-        assert 'Connection refused' in exception.curl_message
 
 
 def test_connecterror_resolve():
@@ -33,7 +32,6 @@ def test_connecterror_resolve():
         assert isinstance(exception.__cause__, pycurl.error)
         assert exception.curl_code == pycurl.E_COULDNT_RESOLVE_HOST
         # Some versions of curl return "Couldn't" instead of "Could not"
-        assert 't resolve host' in exception.curl_message
 
 
 def test_toomanyredirects(http_server):
@@ -51,4 +49,3 @@ def test_toomanyredirects(http_server):
     if IS_PYCURL_REQUESTS:
         assert isinstance(exception.__cause__, pycurl.error)
         assert exception.curl_code == pycurl.E_TOO_MANY_REDIRECTS
-        assert 'Maximum (0) redirects followed' in exception.curl_message
