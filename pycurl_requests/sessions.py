@@ -5,6 +5,7 @@ import pycurl
 from pycurl_requests import adapters
 
 from pycurl_requests.auth import HTTPBasicAuth, CurlAuth
+from pycurl_requests.cookies import RequestsCookieJar
 from pycurl_requests.exceptions import InvalidSchema
 from pycurl_requests.models import Request, PreparedRequest, Response, DEFAULT_REDIRECT_LIMIT
 from pycurl_requests import structures
@@ -19,7 +20,7 @@ class Session:
     def __init__(self):
         self.auth = None
         self.cert = None
-        self.cookies = None
+        self.cookies = RequestsCookieJar()
         self.headers = structures.CaseInsensitiveDict()
         self.hooks = NotImplemented
         self.max_redirects = DEFAULT_REDIRECT_LIMIT

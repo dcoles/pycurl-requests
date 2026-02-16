@@ -52,9 +52,6 @@ def test_session_parameters(http_server):
     assert response.text == 'a: 1\nb: 3\nc: 4'
 
 
-COOKIEJAR1 = cookies.RequestsCookieJar()
-COOKIEJAR1.update({'a': 'Fizz', 'b': 'Bazz'})
-
 COOKIEJAR2 = cookies.RequestsCookieJar()
 COOKIEJAR2.update({'b': 'Buzz', 'c': 'Boo'})
 
@@ -62,7 +59,7 @@ COOKIEJAR2.update({'b': 'Buzz', 'c': 'Boo'})
 @pytest.mark.parametrize('cookies_', [{'b': 'Buzz', 'c': 'Boo'}, COOKIEJAR2])
 def test_session_cookies(http_server, cookies_):
     with requests.Session() as s:
-        s.cookies = COOKIEJAR1
+        s.cookies.update({'a': 'Fizz', 'b': 'Bazz'})
         response = s.get(http_server.base_url + '/cookies', cookies=cookies_)
 
     assert response.text == 'a: Fizz\nb: Buzz\nc: Boo'
