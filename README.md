@@ -169,6 +169,24 @@ Log records are split into dedicated sub-loggers for each type of record:
 - `curl.header_in` &mdash; Header data received from the peer
 - `curl.header_out` &mdash; Header data sent to the peer
 
+## Contribute
+
+```bash
+pip3 install requirements.txt
+pip3 install requirements-dev.txt
+```
+
+Run tests
+```bash
+pytest pycurl_requests/tests
+```
+
+Test test_proxy requires an string proxy with the different public ip than the original machine
+```bash
+export PYTEST_PROXY="your_proxy"
+pytest -s pycurl_requests/tests/test_session.py::test_proxy
+  
+```
 ## Known limitations
 
 - No support for reading [Cookies](https://requests.readthedocs.io/en/master/user/quickstart/#cookies)

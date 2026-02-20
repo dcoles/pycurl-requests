@@ -7,7 +7,12 @@ from pycurl_requests import adapters
 from pycurl_requests.auth import HTTPBasicAuth, CurlAuth
 from pycurl_requests.cookies import RequestsCookieJar
 from pycurl_requests.exceptions import InvalidSchema
-from pycurl_requests.models import Request, PreparedRequest, Response, DEFAULT_REDIRECT_LIMIT
+from pycurl_requests.models import (
+    Request,
+    PreparedRequest,
+    Response,
+    DEFAULT_REDIRECT_LIMIT,
+)
 from pycurl_requests import structures
 
 
@@ -33,8 +38,8 @@ class Session:
         self.curl = pycurl.Curl()
 
         self.adapters = OrderedDict()
-        self.mount('https://', adapters.PyCurlHttpAdapter(self.curl))
-        self.mount('http://', adapters.PyCurlHttpAdapter(self.curl))
+        self.mount("https://", adapters.PyCurlHttpAdapter(self.curl))
+        self.mount("http://", adapters.PyCurlHttpAdapter(self.curl))
 
     def __enter__(self):
         return self
@@ -49,53 +54,86 @@ class Session:
         self.curl = None
 
     def get(self, url, params=None, **kwargs) -> Response:
-        return self.request('GET', url, params=params, **kwargs)
+        return self.request("GET", url, params=params, **kwargs)
 
     def head(self, url, **kwargs) -> Response:
-        return self.request('HEAD', url, **kwargs)
+        return self.request("HEAD", url, **kwargs)
 
     def options(self, url, **kwargs) -> Response:
-        return self.request('OPTIONS', url, **kwargs)
+        return self.request("OPTIONS", url, **kwargs)
 
     def post(self, url, data=None, json=None, **kwargs) -> Response:
-        return self.request('POST', url, data=data, json=json, **kwargs)
+        return self.request("POST", url, data=data, json=json, **kwargs)
 
     def put(self, url, data=None, **kwargs) -> Response:
-        return self.request('PUT', url, data=data, **kwargs)
+        return self.request("PUT", url, data=data, **kwargs)
 
     def patch(self, url, data=None, **kwargs) -> Response:
-        return self.request('PATCH', url, data=data, **kwargs)
+        return self.request("PATCH", url, data=data, **kwargs)
 
     def delete(self, url, **kwargs) -> Response:
-        return self.request('DELETE', url, **kwargs)
+        return self.request("DELETE", url, **kwargs)
 
-    def request(self, method, url,
-                params=None, data=None, headers=None, cookies=None, files=None,
-                auth=None, timeout=None, allow_redirects=True, proxies=None,
-                hooks=None, stream=None, verify=None, cert=None, json=None) -> Response:
-        request = Request(method, url,
-                          params=params,
-                          data=data,
-                          json=json,
-                          headers=headers,
-                          cookies=cookies,
-                          files=files,
-                          auth=auth,
-                          hooks=hooks)
+    def request(
+        self,
+        method,
+        url,
+        params=None,
+        data=None,
+        headers=None,
+        cookies=None,
+        files=None,
+        auth=None,
+        timeout=None,
+        allow_redirects=True,
+        proxies=None,
+        hooks=None,
+        stream=None,
+        verify=None,
+        cert=None,
+        json=None,
+    ) -> Response:
+        request = Request(
+            method,
+            url,
+            params=params,
+            data=data,
+            json=json,
+            headers=headers,
+            cookies=cookies,
+            files=files,
+            auth=auth,
+            hooks=hooks,
+        )
 
-        prepared = self.prepare_request(request)
+        prep = self.prepare_request(request)
 
-        settings = dict(timeout=timeout, allow_redirects=allow_redirects, max_redirects=self.max_redirects)
-        settings.update(self.merge_environment_settings(prepared.url, proxies, stream, verify, cert))
+        proxies = proxies or {}
 
-        return self.send(prepared, **settings)
+        settings = dict(
+            timeout=timeout,
+            allow_redirects=allow_redirects,
+            max_redirects=self.max_redirects,
+            proxies=proxies,
+        )
+        # tbh idk why we would even go to match the envoironment settings in a function, original lib just uses .update
+        # settings.update(
+        #     self.merge_environment_settings(prep.url, proxies, stream, verify, cert)
+        # )
+        send_kwargs = {
+            "timeout": timeout,
+            "allow_redirects": allow_redirects,
+        }
+        send_kwargs.update(settings)
+
+        return self.send(prep, **send_kwargs)
 
     def get_adapter(self, url) -> adapters.BaseAdapter:
-        for (prefix, adapter) in self.adapters.items():
+        for prefix, adapter in self.adapters.items():
             if url.lower().startswith(prefix.lower()):
                 return adapter
 
-        raise InvalidSchema(f'No connection adapters were found for {url!r}')
+        raise InvalidSchema(f"No connection adapters were found for {url!r}")
 
     def get_redirect_target(self, resp: Response) -> Optional[str]:
         raise NotImplementedError
@@ -135,7 +173,8 @@ class Session:
             params=_merge_params(self.params, request.params),
             auth=request.auth or self.auth,
             cookies=_merge_params(self.cookies, request.cookies),
-            hooks=NotImplemented)  # TODO: Merge request with Session
+            hooks=NotImplemented,
+        )  # TODO: Merge request with Session
 
         return prepared
 
@@ -148,13 +187,22 @@ class Session:
     def rebuild_proxies(self, prepared_request, proxies) -> dict:
         raise NotImplementedError
 
-    def resolve_redirects(self, resp: Response, req: PreparedRequest, stream=False, timeout=None, verify=True, cert=None,
-                          proxies=None, yield_requests=False, **adapter_kwargs) -> Generator:
+    def resolve_redirects(
+        self,
+        resp: Response,
+        req: PreparedRequest,
+        stream=False,
+        timeout=None,
+        verify=True,
+        cert=None,
+        proxies=None,
+        yield_requests=False,
+        **adapter_kwargs,
+    ) -> Generator:
         raise NotImplementedError
 
     def send(self, request: PreparedRequest, **kwargs):
         adapter = self.get_adapter(request.url)
-
         return adapter.send(request, **kwargs)
 
     def should_strip_auth(self, old_url, new_url):
