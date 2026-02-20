@@ -181,6 +181,12 @@ Run tests
 pytest pycurl_requests/tests
 ```
 
+Test test_proxy requires an string proxy with the different public ip than the original machine
+```bash
+export PYTEST_PROXY="your_proxy"
+pytest -s pycurl_requests/tests/test_session.py::test_proxy
+  
+```
 ## Known limitations
 
 - No support for reading [Cookies](https://requests.readthedocs.io/en/master/user/quickstart/#cookies)
