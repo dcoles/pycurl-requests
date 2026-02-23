@@ -39,27 +39,27 @@ def test_session_max_redirects(http_server):
     with pytest.raises(requests.TooManyRedirects):
         with requests.Session() as s:
             s.max_redirects = 3
-            s.get(http_server.base_url + '/redirect')
+            s.get(http_server.base_url + "/redirect")
 
-    assert http_server.last_url.path == '/redirect3'
+    assert http_server.last_url.path == "/redirect3"
 
 
 def test_session_parameters(http_server):
     with requests.Session() as s:
-        s.params = {'a': 1, 'b': 2}
-        response = s.get(http_server.base_url + '/params', params={'b': 3, 'c': 4})
+        s.params = {"a": 1, "b": 2}
+        response = s.get(http_server.base_url + "/params", params={"b": 3, "c": 4})
 
-    assert response.text == 'a: 1\nb: 3\nc: 4'
+    assert response.text == "a: 1\nb: 3\nc: 4"
 
 
 COOKIEJAR2 = cookies.RequestsCookieJar()
-COOKIEJAR2.update({'b': 'Buzz', 'c': 'Boo'})
+COOKIEJAR2.update({"b": "Buzz", "c": "Boo"})
 
 
-@pytest.mark.parametrize('cookies_', [{'b': 'Buzz', 'c': 'Boo'}, COOKIEJAR2])
+@pytest.mark.parametrize("cookies_", [{"b": "Buzz", "c": "Boo"}, COOKIEJAR2])
 def test_session_cookies(http_server, cookies_):
     with requests.Session() as s:
-        s.cookies.update({'a': 'Fizz', 'b': 'Bazz'})
-        response = s.get(http_server.base_url + '/cookies', cookies=cookies_)
+        s.cookies.update({"a": "Fizz", "b": "Bazz"})
+        response = s.get(http_server.base_url + "/cookies", cookies=cookies_)
 
-    assert response.text == 'a: Fizz\nb: Buzz\nc: Boo'
+    assert response.text == "a: Fizz\nb: Buzz\nc: Boo"

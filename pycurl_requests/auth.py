@@ -5,13 +5,20 @@ import pycurl
 
 class AuthBase:
     """Base class that all auth implementations derive from."""
+
     def __call__(self, r):
-        raise NotImplementedError('Auth hooks must be callable')
+        raise NotImplementedError("Auth hooks must be callable")
 
 
 class CurlAuth(AuthBase):
     """Auth handled by cURL."""
-    def __init__(self, httpauth: int, username: Optional[str] = None, password: Optional[str] = None):
+
+    def __init__(
+        self,
+        httpauth: int,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+    ):
         """
         :param httpauth: Bitmask of authentication method(s) to use (see `CURLOPT_HTTPAUTH`).
         :param username: Username for authentication.
@@ -37,6 +44,7 @@ class CurlAuth(AuthBase):
 
 class HTTPBasicAuth(CurlAuth):
     """HTTP Basic Authentication."""
+
     def __init__(self, username: str, password: str):
         """
         :param username: Username for authentication.

@@ -37,18 +37,24 @@ class RequestException(IOError):
     def from_pycurl_error(cls, error: pycurl.error, **kwargs):
         """Create a RequestException (or subclass) from PycURL error."""
         code, message = error.args[:2]
-        msg = '{} (cURL error: {})'.format(message, code)
+        msg = "{} (cURL error: {})".format(message, code)
 
         exception = PYCURL_ERROR_MAPPING.get(code, cls)
         return exception(msg, curl_message=message, curl_code=code, **kwargs)
 
-    def __init__(self, *args, curl_message=None, curl_code=None, request=None, response=None):
+    def __init__(
+        self, *args, curl_message=None, curl_code=None, request=None, response=None
+    ):
         self.curl_message = curl_message
         self.curl_code = curl_code
         self.request = request
         self.response = response
 
-        if self.response is not None and not self.request and hasattr(self.response, 'request'):
+        if (
+            self.response is not None
+            and not self.request
+            and hasattr(self.response, "request")
+        ):
             self.request = self.response.request
 
         super().__init__(*args)
@@ -137,21 +143,25 @@ class RetryError(RequestException):
 class UnrewindableBodyError(RequestException):
     """Requests encountered an error when trying to rewind a body"""
 
+
 # Warnings
 
 
 class RequestsWarning(Warning):
     """Base warning for Requests."""
+
     pass
 
 
 class FileModeWarning(RequestsWarning, DeprecationWarning):
     """A file was opened in text mode, but Requests determined its binary length."""
+
     pass
 
 
 class RequestsDependencyWarning(RequestsWarning):
     """An imported dependency doesn't match the expected version range."""
+
     pass
 
 

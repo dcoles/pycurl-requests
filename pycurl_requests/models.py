@@ -18,17 +18,19 @@ DEFAULT_REDIRECT_LIMIT = 30
 
 
 class Request:
-    def __init__(self,
-                 method=None,
-                 url=None,
-                 headers=None,
-                 files=None,
-                 data=None,
-                 params=None,
-                 auth=None,
-                 cookies=None,
-                 hooks=None,
-                 json=None):
+    def __init__(
+        self,
+        method=None,
+        url=None,
+        headers=None,
+        files=None,
+        data=None,
+        params=None,
+        auth=None,
+        cookies=None,
+        hooks=None,
+        json=None,
+    ):
 
         self.method = method
         self.url = url
@@ -56,7 +58,8 @@ class Request:
             auth=self.auth,
             cookies=self.cookies,
             hooks=self.hooks,
-            json=self.json)
+            json=self.json,
+        )
 
         return prepared
 
@@ -77,7 +80,7 @@ class Response:
 
     @property
     def apparent_encoding(self):
-        return chardet.detect(self.content)['encoding']
+        return chardet.detect(self.content)["encoding"]
 
     def close(self):
         # Not implemented
@@ -107,8 +110,12 @@ class Response:
 
     def iter_content(self, chunk_size=1, decode_unicode=False):
         chunk_size = chunk_size or -1
-        decoder = codecs.getincrementaldecoder(self.encoding)('replace') if self.encoding and decode_unicode else None
-        for chunk in iter(lambda: self.raw.read1(chunk_size), b''):
+        decoder = (
+            codecs.getincrementaldecoder(self.encoding)("replace")
+            if self.encoding and decode_unicode
+            else None
+        )
+        for chunk in iter(lambda: self.raw.read1(chunk_size), b""):
             if decoder:
                 yield decoder.decode(chunk)
             else:
@@ -116,7 +123,7 @@ class Response:
 
         if decoder:
             # Make sure we finalize the decoder (may yield replacement character)
-            tail = decoder.decode(b'', True)
+            tail = decoder.decode(b"", True)
             if tail:
                 yield tail
 
@@ -132,7 +139,7 @@ class Response:
                 parts = chunk.splitlines()
 
             # FIXME: This logic doesn't work for CR-only line endings
-            if chr(ord(chunk[-1])) == '\n':
+            if chr(ord(chunk[-1])) == "\n":
                 yield from parts
                 leftover = None
             else:
@@ -160,16 +167,24 @@ class Response:
 
     def raise_for_status(self):
         if 400 <= self.status_code < 500:
-            raise exceptions.HTTPError('{s.status_code} Client Error: {s.reason} for url: {s.url}'.format(s=self),
-                                       response=self)
+            raise exceptions.HTTPError(
+                "{s.status_code} Client Error: {s.reason} for url: {s.url}".format(
+                    s=self
+                ),
+                response=self,
+            )
 
         if 500 <= self.status_code < 600:
-            raise exceptions.HTTPError('{s.status_code} Client Error: {s.reason} for url: {s.url}'.format(s=self),
-                                       response=self)
+            raise exceptions.HTTPError(
+                "{s.status_code} Client Error: {s.reason} for url: {s.url}".format(
+                    s=self
+                ),
+                response=self,
+            )
 
     @property
     def text(self):
-        return self.content.decode(self.encoding or 'ISO-8859-1')
+        return self.content.decode(self.encoding or "ISO-8859-1")
 
 
 class PreparedRequest:
@@ -187,17 +202,19 @@ class PreparedRequest:
     def path_url(self):
         return urlsplit(self.url).path
 
-    def prepare(self,
-                method=None,
-                url=None,
-                headers=None,
-                files=None,
-                data=None,
-                params=None,
-                auth=None,
-                cookies=None,
-                hooks=None,
-                json=None):
+    def prepare(
+        self,
+        method=None,
+        url=None,
+        headers=None,
+        files=None,
+        data=None,
+        params=None,
+        auth=None,
+        cookies=None,
+        hooks=None,
+        json=None,
+    ):
 
         self.prepare_method(method)
         self.prepare_url(url, params)
@@ -212,17 +229,17 @@ class PreparedRequest:
 
     def prepare_url(self, url, params):
         if isinstance(url, bytes):
-            url = url.decode('iso-8859-1')
+            url = url.decode("iso-8859-1")
 
         url = url.strip()
 
         # Leave non-HTTP schemes as-is
-        if ':' in url and not url.lower().startswith('http'):
+        if ":" in url and not url.lower().startswith("http"):
             self.url = url
             return
 
         parts = urlsplit(url)
-        path = quote(parts.path) if parts.path else '/'
+        path = quote(parts.path) if parts.path else "/"
 
         if not params:
             query = parts.query
@@ -252,32 +269,32 @@ class PreparedRequest:
 
     def prepare_cookies(self, cookies):
         # Cookies can only be set if there is no existing `Cookie` header
-        if 'Cookie' in self.headers or cookies is None:
+        if "Cookie" in self.headers or cookies is None:
             return
 
         cookiejar = RequestsCookieJar()
         cookiejar.update(cookies)
 
-        value = '; '.join(('{}={}'.format(n, v) for n, v in cookiejar.iteritems()))
+        value = "; ".join(("{}={}".format(n, v) for n, v in cookiejar.iteritems()))
 
-        self.headers['Cookie'] = value
+        self.headers["Cookie"] = value
 
     def prepare_content_length(self, body):
         content_length = None
 
         if body is None:
-            if self.method not in ('GET', 'HEAD'):
+            if self.method not in ("GET", "HEAD"):
                 content_length = 0
         elif isinstance(body, bytes):
             content_length = len(body)
         elif isinstance(body, str):
-            content_length = len(body.encode('iso-8859-1'))
-        elif getattr(body, 'seekable', False):
+            content_length = len(body.encode("iso-8859-1"))
+        elif getattr(body, "seekable", False):
             content_length = body.seek(0, io.SEEK_END)
             body.seek(0)
 
         if content_length is not None:
-            self.headers['Content-Length'] = str(content_length)
+            self.headers["Content-Length"] = str(content_length)
 
     def prepare_body(self, data, files, json=None):
         body = None
@@ -289,16 +306,18 @@ class PreparedRequest:
                 # It's a file-like object, so can be sent directly
                 body = data
             elif isinstance(data, (abc.Mapping, list, tuple)):
-                self._set_header_default('Content-Type', 'application/x-www-form-urlencoded')
+                self._set_header_default(
+                    "Content-Type", "application/x-www-form-urlencoded"
+                )
                 body = urlencode(data)
             else:
                 # Assume it's something bytes-compatible
                 body = data
         elif json is not None:
-            self._set_header_default('Content-Type', 'application/json')
-            body = json_.dumps(json, ensure_ascii=True).encode('ascii')
+            self._set_header_default("Content-Type", "application/json")
+            body = json_.dumps(json, ensure_ascii=True).encode("ascii")
 
-        if 'Content-Length' not in self.headers:
+        if "Content-Length" not in self.headers:
             self.prepare_content_length(body)
 
         self.body = body
@@ -308,7 +327,7 @@ class PreparedRequest:
         if key not in self.headers:
             self.headers[key] = default
 
-    def prepare_auth(self, auth, url=''):
+    def prepare_auth(self, auth, url=""):
         if not auth:
             return
 
